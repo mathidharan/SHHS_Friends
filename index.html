@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Friends Profile | Member Registration</title>
+
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="site-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fas fa-id-card"></i>
+        </div>
+        <div class="brand-text">
+          <h1>School Friends Profile</h1>
+          <p>Alumni Business Directory</p>
+        </div>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li class="nav-item">
+            <a href="index.html" class="active">
+              <i class="fas fa-user-plus"></i>
+              <span>Register Member</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="profiles.html">
+              <i class="fas fa-address-book"></i>
+              <span>Directory Cards</span>
+              <span class="badge-count" id="navProfileCount">0</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <button type="button" class="btn-icon" id="themeToggleBtn" title="Toggle Light/Dark Theme">
+          <i class="fas fa-sun"></i>
+        </button>
+        <a href="profiles.html" class="btn btn-primary btn-sm">
+          <i class="fas fa-th-large"></i> View Directory
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-wrapper">
+    <div class="page-intro">
+      <div>
+        <h2 class="page-title">Register Alumni Profile</h2>
+        <p class="page-subtitle">Add your details to the school alumni directory. A horizontal business card
+          will automatically be formatted for you.</p>
+      </div>
+      <div>
+        <a href="profiles.html" class="btn btn-outline btn-sm">
+          <i class="fas fa-arrow-right"></i> Explore Registered Friends
+        </a>
+      </div>
+    </div>
+
+    <!-- Form & Live Preview Layout -->
+    <div class="form-layout">
+      <!-- Registration Form -->
+      <section class="form-card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 0.5rem;">
+          <h3 style="font-size: 1.25rem; font-weight: 700;">
+            <i class="fas fa-clipboard-list" style="color: var(--primary);"></i> Profile Information
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--text-dim);"><span style="color:#ef4444;">*</span> Required
+            fields</span>
+        </div>
+
+        <form id="profileForm" novalidate>
+          <div class="form-grid">
+
+            <!-- Full Name -->
+            <div class="form-group form-col-full">
+              <label class="form-label" for="fullName">
+                <span>Full Name</span> <span class="required">*</span>
+              </label>
+              <div class="input-wrapper">
+                <i class="fas fa-user input-icon"></i>
+                <input type="text" id="fullName" class="form-control" placeholder="e.g. Raja Guru" required autofocus>
+              </div>
+            </div>
+
+            <!-- Gender -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Gender</span> <span class="required">*</span>
+              </label>
+              <div style="display: flex; gap: 0.75rem; margin-top: 0.25rem;">
+                <label style="flex: 1; cursor: pointer;">
+                  <input type="radio" name="gender" value="Male" checked style="display: none;" id="genderMale">
+                  <div class="sector-label"
+                    onclick="document.getElementById('genderMale').checked = true; document.getElementById('genderMale').dispatchEvent(new Event('change'))">
+                    <i class="fas fa-mars" style="color:#38bdf8;"></i>
+                    <span>Male</span>
+                  </div>
+                </label>
+                <label style="flex: 1; cursor: pointer;">
+                  <input type="radio" name="gender" value="Female" style="display: none;" id="genderFemale">
+                  <div class="sector-label"
+                    onclick="document.getElementById('genderFemale').checked = true; document.getElementById('genderFemale').dispatchEvent(new Event('change'))">
+                    <i class="fas fa-venus" style="color:#f472b6;"></i>
+                    <span>Female</span>
+                  </div>
+                </label>
+                <!-- <label style="flex: 1; cursor: pointer;">
+                  <input type="radio" name="gender" value="Other" style="display: none;" id="genderOther">
+                  <div class="sector-label" onclick="document.getElementById('genderOther').checked = true; document.getElementById('genderOther').dispatchEvent(new Event('change'))">
+                    <i class="fas fa-genderless" style="color:#a78bfa;"></i>
+                    <span>Other</span>
+                  </div>
+                </label> -->
+              </div>
+            </div>
+
+            <!-- Date of Birth (DOB) -->
+            <div class="form-group">
+              <label class="form-label" for="dob">
+                <span>Date of Birth (DOB)</span> <span class="required">*</span>
+              </label>
+              <div class="input-wrapper">
+                <i class="fas fa-calendar-alt input-icon"></i>
+                <input type="date" id="dob" class="form-control" required value="1995-05-20">
+              </div>
+            </div>
+
+            <!-- Career Type: Working or Business -->
+            <div class="form-group form-col-full">
+              <label class="form-label">
+                <span>Working or Business?</span> <span class="required">*</span>
+              </label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-top: 0.25rem;">
+                <label style="cursor: pointer;">
+                  <input type="radio" name="occupationType" value="Working" checked style="display: none;"
+                    id="occWorking">
+                  <div class="sector-label occ-type-label" id="occWorkingCard">
+                    <i class="fas fa-briefcase" style="color: #60a5fa; font-size: 1.35rem;"></i>
+                    <strong style="font-size: 0.95rem;">Working</strong>
+                    <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: normal;">Employed / Corporate
+                      / Govt</span>
+                  </div>
+                </label>
+                <label style="cursor: pointer;">
+                  <input type="radio" name="occupationType" value="Business" style="display: none;" id="occBusiness">
+                  <div class="sector-label occ-type-label" id="occBusinessCard">
+                    <i class="fas fa-store" style="color: #fbbf24; font-size: 1.35rem;"></i>
+                    <strong style="font-size: 0.95rem;">Business</strong>
+                    <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: normal;">Entrepreneur / Own
+                      Business</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- SECTION A: WORKING DETAILS (Shown when 'Working' is selected) -->
+            <div id="workingSection" class="form-col-full"
+              style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem 1.5rem; padding: 1.25rem; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: var(--radius-md);">
+              <div class="form-col-full"
+                style="display: flex; align-items: center; gap: 0.45rem; font-weight: 700; color: #818cf8; font-size: 0.9rem;">
+                <i class="fas fa-user-tie"></i> <span>Employment Details</span>
+              </div>
+
+              <!-- Current Job / Organization -->
+              <div class="form-group">
+                <label class="form-label" for="currentJob">
+                  <span>Current Job (Company / Organization)</span> <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="far fa-building input-icon"></i>
+                  <input type="text" id="currentJob" class="form-control" placeholder="e.g. Tech Innovators Pvt Ltd">
+                </div>
+              </div>
+
+              <!-- Job Designation -->
+              <div class="form-group">
+                <label class="form-label" for="jobDesignation">
+                  <span>Job Designation</span> <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="fas fa-id-badge input-icon"></i>
+                  <input type="text" id="jobDesignation" class="form-control"
+                    placeholder="e.g. Senior Solutions Architect">
+                </div>
+              </div>
+
+              <!-- Current Living City (Working) -->
+              <div class="form-group">
+                <label class="form-label" for="currentCity">
+                  <span>Current Living City</span> <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="fas fa-map-marker-alt input-icon"></i>
+                  <input type="text" id="currentCity" class="form-control"
+                    placeholder="e.g. Bangalore, Chennai, Mumbai">
+                </div>
+              </div>
+
+              <!-- Working Sector (Self, Private, Govt) -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Working Sector</span> <span class="required">*</span>
+                </label>
+                <div class="sector-options">
+                  <label class="sector-option">
+                    <input type="radio" name="workingSector" value="Private" checked>
+                    <div class="sector-label">
+                      <i class="fas fa-building" style="color: #60a5fa;"></i>
+                      <span>Private</span>
+                    </div>
+                  </label>
+                  <label class="sector-option">
+                    <input type="radio" name="workingSector" value="Govt">
+                    <div class="sector-label">
+                      <i class="fas fa-landmark" style="color: #34d399;"></i>
+                      <span>Govt</span>
+                    </div>
+                  </label>
+                  <label class="sector-option">
+                    <input type="radio" name="workingSector" value="Self">
+                    <div class="sector-label">
+                      <i class="fas fa-user-tie" style="color: #fbbf24;"></i>
+                      <span>Self</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION B: BUSINESS DETAILS (Shown when 'Business' is selected) -->
+            <div id="businessSection" class="form-col-full"
+              style="display: none; grid-template-columns: repeat(2, 1fr); gap: 1.25rem 1.5rem; padding: 1.25rem; background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius-md);">
+              <div class="form-col-full" style="display: flex; align-items: center; justify-content: space-between;">
+                <div
+                  style="display: flex; align-items: center; gap: 0.45rem; font-weight: 700; color: #fbbf24; font-size: 0.9rem;">
+                  <i class="fas fa-store-alt"></i> <span>Business & Enterprise Details</span>
+                </div>
+                <span
+                  style="font-size: 0.72rem; color: #fbbf24; background: rgba(245,158,11,0.15); padding: 0.15rem 0.5rem; border-radius: 99px;">Entrepreneur</span>
+              </div>
+
+              <!-- Business Name -->
+              <div class="form-group">
+                <label class="form-label" for="businessName">
+                  <span>Business Name</span> <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="fas fa-store input-icon"></i>
+                  <input type="text" id="businessName" class="form-control"
+                    placeholder="e.g. Bose Artisanal Coffee Roasters">
+                </div>
+              </div>
+
+              <!-- Company Name -->
+              <div class="form-group">
+                <label class="form-label" for="bizCompanyName">
+                  <span>Company / Legal Entity Name</span> <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="far fa-building input-icon"></i>
+                  <input type="text" id="bizCompanyName" class="form-control"
+                    placeholder="e.g. Bose Beverage Ventures LLP / Pvt Ltd">
+                </div>
+              </div>
+
+              <!-- Job Designation in Business -->
+              <div class="form-group">
+                <label class="form-label" for="bizJobDesignation">
+                  <span>Job Designation</span> <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="fas fa-award input-icon"></i>
+                  <input type="text" id="bizJobDesignation" class="form-control"
+                    placeholder="e.g. Founder & CEO, Managing Director">
+                </div>
+              </div>
+
+              <!-- Business Location -->
+              <div class="form-group">
+                <label class="form-label" for="businessLocation">
+                  <span>Business Location</span> <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="fas fa-map-marked-alt input-icon"></i>
+                  <input type="text" id="businessLocation" class="form-control"
+                    placeholder="e.g. Coimbatore / Indiranagar, Bangalore">
+                </div>
+              </div>
+
+              <!-- Current Living City (Business) -->
+              <div class="form-group">
+                <label class="form-label" for="bizLivingCity">
+                  <span>Current Living City</span> <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="fas fa-home input-icon"></i>
+                  <input type="text" id="bizLivingCity" class="form-control" placeholder="e.g. Coimbatore">
+                </div>
+              </div>
+
+              <!-- Bonus / Idea Field: Business Category & Website -->
+              <div class="form-group">
+                <label class="form-label" for="businessCategory">
+                  <span>Business Industry / Category</span> <span
+                    style="font-size:0.75rem; color:var(--text-dim);">(Suggested)</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="fas fa-tags input-icon"></i>
+                  <input type="text" id="businessCategory" class="form-control"
+                    placeholder="e.g. Retail, Food & Beverage, Tech, Consulting">
+                </div>
+              </div>
+
+              <div class="form-group form-col-full">
+                <label class="form-label" for="businessWebsite">
+                  <span>Business Website / Social / Catalog</span> <span
+                    style="font-size:0.75rem; color:var(--text-dim);">(Suggested)</span>
+                </label>
+                <div class="input-wrapper">
+                  <i class="fas fa-globe input-icon"></i>
+                  <input type="url" id="businessWebsite" class="form-control"
+                    placeholder="https://mybusiness.com or Instagram/WhatsApp link">
+                </div>
+              </div>
+            </div>
+
+            <!-- Profile Avatar Preview -->
+            <div class="form-group form-col-full">
+              <label class="form-label">
+                <span>Profile Avatar</span>
+              </label>
+              <div
+                style="display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1.25rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                <div class="biz-avatar-box" style="width: 58px; height: 58px; margin: 0; flex-shrink: 0;">
+                  <div class="biz-avatar-circle" id="formAvatarCircle"
+                    style="background: linear-gradient(135deg, #4f46e5, #06b6d4); font-size: 1.4rem;">
+                    <span id="formAvatarInitials">RG</span>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-main);">
+                    Alumni Initial Avatar
+                  </div>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+                    Dynamic executive avatar badge generated from your name and career profile.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Optional Contact Information -->
+            <div class="form-group">
+              <label class="form-label" for="phone">
+                <span>Phone / WhatsApp</span> <span style="font-size:0.75rem; color:var(--text-dim);">(Optional)</span>
+              </label>
+              <div class="input-wrapper">
+                <i class="fas fa-phone input-icon"></i>
+                <input type="tel" id="phone" class="form-control" placeholder="+91 98400 12345">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="email">
+                <span>Email Address</span> <span style="font-size:0.75rem; color:var(--text-dim);">(Optional)</span>
+              </label>
+              <div class="input-wrapper">
+                <i class="fas fa-envelope input-icon"></i>
+                <input type="email" id="email" class="form-control" placeholder="name@example.com">
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions-bar"
+            style="margin-top: 2rem; display: flex; align-items: center; justify-content: flex-end; gap: 1rem;">
+            <button type="button" id="resetFormBtn" class="btn btn-outline">
+              <i class="fas fa-redo"></i> Reset Form
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-id-badge"></i> Register & Create Card
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right Column: Live 30:70 Business Card Preview -->
+      <aside class="live-preview-panel">
+        <div class="preview-title">
+          <i class="fas fa-eye" style="color: var(--primary);"></i> Live Business Card Preview
+        </div>
+
+        <div class="biz-card" style="box-shadow: var(--shadow-lg);">
+          <!-- 30% Visual -->
+          <div class="biz-card-visual">
+            <div class="biz-avatar-box">
+              <div class="biz-avatar-circle" id="previewAvatarCircle"
+                style="background: linear-gradient(135deg, #4f46e5, #06b6d4);">
+                <span id="previewAvatarInitials">RG</span>
+                <div class="biz-avatar-badge" id="previewAvatarBadge">
+                  <i class="fas fa-user-tie"></i>
+                </div>
+              </div>
+            </div>
+            <span id="previewSectorBadge" class="sector-badge sector-private">
+              <i class="fas fa-briefcase"></i> <span id="previewSectorText">Private</span>
+            </span>
+            <span style="font-size:0.68rem; color:var(--text-dim); margin-top:0.3rem;">Profile Visual</span>
+          </div>
+
+          <!-- 70% Details -->
+          <div class="biz-card-content">
+            <div>
+              <div class="biz-card-header">
+                <h3 class="biz-name" id="previewName">Your Name Here</h3>
+                <span class="biz-gender-tag" id="previewGender">
+                  <i class="fas fa-mars"></i> Male
+                </span>
+              </div>
+
+              <div class="biz-role-section">
+                <div class="biz-designation" id="previewRole">Designation / Role</div>
+                <div class="biz-company" id="previewCompany">Organization / Company</div>
+              </div>
+
+              <div class="biz-meta-grid">
+                <div class="biz-meta-item">
+                  <i class="fas fa-birthday-cake"></i>
+                  <div><strong id="previewDob">20 May 1995</strong></div>
+                </div>
+                <div class="biz-meta-item">
+                  <i class="fas fa-map-marker-alt"></i>
+                  <div><strong id="previewCity">City Name</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="biz-card-footer">
+              <span>70% Information</span>
+              <span style="color: var(--primary-light); font-weight: 600;">Executive Badge</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Help Card -->
+        <div
+          style="margin-top: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; font-size: 0.85rem; color: var(--text-muted);">
+          <div
+            style="font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fas fa-database" style="color: var(--secondary);"></i> Local & JSON Storage
+          </div>
+          <p style="line-height: 1.45;">
+            Submitted profiles are saved instantly to the directory.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Success Modal -->
+  <div class="modal-backdrop" id="successModal">
+    <div class="modal-card" style="text-align: center;">
+      <div
+        style="width: 60px; height: 60px; background: rgba(16, 185, 129, 0.15); border-radius: 50%; color: #10b981; display: inline-flex; align-items: center; justify-content: center; font-size: 1.75rem; margin-bottom: 1rem;">
+        <i class="fas fa-check"></i>
+      </div>
+      <h3 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;">Registration Successful!</h3>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+        Your school friend profile has been saved. You can now view your business card in the directory.
+      </p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center;">
+        <button type="button" class="btn btn-outline"
+          onclick="document.getElementById('successModal').classList.remove('open');">
+          Add Another
+        </button>
+        <a href="profiles.html" class="btn btn-primary">
+          <i class="fas fa-address-book"></i> View Cards
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>&copy; 2026 School Friends Profile &bull; Alumni Business Directory &bull; Designed with Vanilla HTML, CSS & JS
+    </p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
+  <script src="js/form.js"></script>
+</body>
+
+</html>

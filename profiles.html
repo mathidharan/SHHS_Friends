@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Friends Profile | Business Card Directory</title>
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="site-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fas fa-id-card"></i>
+        </div>
+        <div class="brand-text">
+          <h1>School Friends Profile</h1>
+          <p>Alumni Business Directory</p>
+        </div>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li class="nav-item">
+            <a href="index.html">
+              <i class="fas fa-user-plus"></i>
+              <span>Register Member</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="profiles.html" class="active">
+              <i class="fas fa-address-book"></i>
+              <span>Directory Cards</span>
+              <span class="badge-count" id="navProfileCount">0</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <button type="button" class="btn-icon" id="themeToggleBtn" title="Toggle Light/Dark Theme">
+          <i class="fas fa-sun"></i>
+        </button>
+        <a href="index.html" class="btn btn-primary btn-sm">
+          <i class="fas fa-plus"></i> Add Profile
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-wrapper">
+    <!-- Page Header Intro -->
+    <div class="page-intro">
+      <div>
+        <h2 class="page-title">Registered Alumni Directory</h2>
+        <p class="page-subtitle">Horizontal executive 30:70 business card showcase. Explore career paths, sectors, and connect with your school friends.</p>
+      </div>
+      <div class="page-intro-actions">
+        <a href="index.html" class="btn btn-primary btn-sm">
+          <i class="fas fa-user-plus"></i> + New Member
+        </a>
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <section class="filter-bar">
+      <!-- Search Input -->
+      <div class="search-box">
+        <i class="fas fa-search input-icon"></i>
+        <input 
+          type="text" 
+          id="searchQuery" 
+          class="search-input" 
+          placeholder="Search by name, company, designation, city, or sector..."
+        >
+      </div>
+
+      <!-- Filter Category Pills -->
+      <div class="filter-pills">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Filter:</span>
+        <button type="button" class="filter-pill active" data-filter="ALL">All</button>
+        <button type="button" class="filter-pill" data-filter="Working">
+          <i class="fas fa-briefcase" style="color: #60a5fa;"></i> Working
+        </button>
+        <button type="button" class="filter-pill" data-filter="Business">
+          <i class="fas fa-store" style="color: #fbbf24;"></i> Business
+        </button>
+        <button type="button" class="filter-pill" data-filter="Private">
+          <i class="fas fa-building" style="color: #60a5fa;"></i> Private
+        </button>
+        <button type="button" class="filter-pill" data-filter="Govt">
+          <i class="fas fa-landmark" style="color: #34d399;"></i> Govt
+        </button>
+      </div>
+
+      <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;" id="filteredCount">
+        Showing all members
+      </div>
+    </section>
+
+    <!-- 30:70 Horizontal Business Cards Grid -->
+    <section class="biz-cards-grid" id="bizCardsContainer">
+      <!-- Cards rendered dynamically via js/profiles.js -->
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>&copy; 2026 School Friends Profile &bull; Alumni Business Directory &bull; Designed with Vanilla HTML, CSS & JS</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
+  <script src="js/profiles.js"></script>
+</body>
+</html>

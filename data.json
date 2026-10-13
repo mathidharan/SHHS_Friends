@@ -1,0 +1,47 @@
+[
+  {
+    "id": "sfp-001",
+    "name": "Rajaguru S",
+    "gender": "Male",
+    "dob": "1994-06-15",
+    "occupationType": "Working",
+    "currentJob": "HDFC Life Insurance",
+    "jobDesignation": "Sr. CAM",
+    "currentCity": "Salem",
+    "workingSector": "Private",
+    "photo": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+    "phone": "+91 98842 98181",
+    "email": "",
+    "registeredAt": "2026-10-10T10:30:00.000Z"
+  },
+  {
+    "id": "sfp-002",
+    "name": "Vinothkumar G",
+    "gender": "Male",
+    "dob": "1994-02-29",
+    "occupationType": "Working",
+    "currentJob": "Dolphin Food India Ltd",
+    "jobDesignation": "Territory Sales Incharge",
+    "currentCity": "Salem",
+    "workingSector": "Private",
+    "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
+    "phone": "+91 90957 08567",
+    "email": "",
+    "registeredAt": "2026-10-10T11:15:00.000Z"
+  },
+  {
+    "id": "sfp-003",
+    "name": "Nandakumar D",
+    "gender": "Male",
+    "dob": "1994-06-15",
+    "occupationType": "Working",
+    "currentJob": "Kings Colleg of Engineering",
+    "jobDesignation": "Assistant Professor",
+    "currentCity": "Pudukkottai",
+    "workingSector": "Private",
+    "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+    "phone": "+91 95974 84321",
+    "email": "",
+    "registeredAt": "2026-10-11T09:00:00.000Z"
+  }
+]
