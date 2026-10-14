@@ -48,3 +48,18 @@ https://script.google.com/macros/s/AKfycbxKGDkCxSE-_AfDyD5aot0Em6vfoGGDmHGcd7yBw
 - **Hidden & Public Ready**: Visitors to the public page are never prompted for URLs or setup modals.
 - **Auto-Sync on Registration**: Registrations on `index.html` save locally and immediately append a row to your Google Sheet.
 - **One-Click Sync**: Clicking **Sync** on `profiles.html` fetches the latest entries from the Google Sheet and updates the cards instantly.
+
+---
+
+## 🔄 How to Update Existing Google Apps Script (Important!)
+
+Whenever changes are made to `google-sheets-script.js`:
+1. In your Google Sheet, open **Extensions** > **Apps Script**.
+2. Select all code and replace it with the updated [`google-sheets-script.js`](./google-sheets-script.js).
+3. Click the **Save** (💾) icon.
+4. Click **Deploy** > **Manage deployments**.
+5. Click the **Pencil icon (Edit ✏️)** next to your active deployment.
+6. Under **Version**, change it from the old version to **New version**.
+7. Click **Deploy**!
+
+> **Why this matters**: Google Apps Script web apps run the deployed snapshot version. Creating a **New version** ensures your live URL immediately runs the updated code with dynamic column matching and auto-header creation for `bloodGroup` and `willingToDonate`.

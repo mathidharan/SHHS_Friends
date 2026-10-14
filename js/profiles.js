@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ? (isDonor
           ? `<span class="blood-badge donor" title="Blood Group: ${escapeHtml(profile.bloodGroup)} &bull; Willing Blood Donor"><i class="fas fa-heartbeat"></i> ${escapeHtml(profile.bloodGroup)} &bull; Donor</span>`
           : `<span class="blood-badge" title="Blood Group: ${escapeHtml(profile.bloodGroup)}"><i class="fas fa-tint"></i> ${escapeHtml(profile.bloodGroup)}</span>`)
-        : '';
+        : `<span class="blood-badge neutral" title="Blood Group: Not specified"><i class="fas fa-tint"></i> Blood: N/A</span>`;
 
       return `
         <article class="biz-card" data-id="${profile.id}">
@@ -156,6 +156,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                   <div>
                     <strong>${formattedDob}</strong>
                   </div>
+                </div>
+
+                <div class="biz-meta-item" title="Blood Group &amp; Donation Willingness">
+                  <i class="fas fa-heartbeat" style="color: #ef4444;"></i>
+                  <div>Blood: <strong>${escapeHtml(profile.bloodGroup || 'Not specified')}</strong>${isDonor && hasBloodGroup ? ' <span style="color:#f87171; font-size:0.75rem; font-weight:700;">(Donor)</span>' : ''}</div>
                 </div>
 
                 ${isBusiness ? `

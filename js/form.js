@@ -122,15 +122,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Gender
     const selectedGender = document.querySelector('input[name="gender"]:checked')?.value || 'Not specified';
     if (previewGender) {
-      previewGender.innerHTML = `<i class="fas fa-user"></i> ${selectedGender}`;
+      const isFemale = selectedGender === 'Female';
+      const isMale = selectedGender === 'Male';
+      const iconClass = isFemale ? 'fa-venus' : (isMale ? 'fa-mars' : 'fa-user');
+      const iconColor = isFemale ? '#f472b6' : (isMale ? '#38bdf8' : 'inherit');
+      previewGender.innerHTML = `<i class="fas ${iconClass}" style="color: ${iconColor};"></i> ${selectedGender}`;
     }
 
     // Blood Group & Donor Badge Preview
-    const bloodGroupVal = bloodGroupInput?.value || 'O+';
+    const bloodGroupVal = bloodGroupInput?.value || '';
     const isDonor = getWillingToDonate() === 'Yes';
     if (previewBloodBadge) {
+      previewBloodBadge.style.display = 'inline-flex';
       if (bloodGroupVal) {
-        previewBloodBadge.style.display = 'inline-flex';
         if (isDonor) {
           previewBloodBadge.className = 'blood-badge donor';
           previewBloodBadge.innerHTML = `<i class="fas fa-heartbeat"></i> <span>${bloodGroupVal} &bull; Donor</span>`;
@@ -139,7 +143,17 @@ document.addEventListener('DOMContentLoaded', async () => {
           previewBloodBadge.innerHTML = `<i class="fas fa-tint"></i> <span>${bloodGroupVal}</span>`;
         }
       } else {
-        previewBloodBadge.style.display = 'none';
+        previewBloodBadge.className = 'blood-badge neutral';
+        previewBloodBadge.innerHTML = `<i class="fas fa-tint"></i> <span>Blood: N/A</span>`;
+      }
+    }
+
+    const previewMetaBlood = document.getElementById('previewMetaBlood');
+    if (previewMetaBlood) {
+      if (bloodGroupVal) {
+        previewMetaBlood.innerHTML = `${bloodGroupVal}${isDonor ? ' <span style="color:#f87171; font-size:0.75rem; font-weight:700;">(Donor)</span>' : ''}`;
+      } else {
+        previewMetaBlood.textContent = 'Not specified';
       }
     }
 
@@ -248,7 +262,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dobInput) dobInput.value = target.dob || '';
     if (phoneInput) phoneInput.value = target.phone || '';
     if (emailInput) emailInput.value = target.email || '';
-    if (bloodGroupInput && target.bloodGroup) bloodGroupInput.value = target.bloodGroup;
+    if (bloodGroupInput) bloodGroupInput.value = target.bloodGroup || '';
 
     // Blood Donation Willingness
     const targetWilling = target.willingToDonate === 'No' ? 'No' : 'Yes';

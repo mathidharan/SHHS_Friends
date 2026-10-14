@@ -3,24 +3,22 @@
  * -------------------------------------------------------------
  * 100% Free - No server, no credit card, no paid APIs required.
  * 
- * HOW TO SET UP IN 2 MINUTES:
- * 1. Open Google Sheets (sheets.google.com) and create a New Blank Spreadsheet.
- * 2. Name your sheet (e.g. "School Friends Profiles").
- * 3. Click Extensions > Apps Script in the top menu.
- * 4. Delete any code in the editor and PASTE this ENTIRE code.
- * 5. Click the "Save" (disk) icon.
- * 6. Click "Deploy" > "New deployment".
- * 7. Click the gear icon next to "Select type" and choose "Web app".
- * 8. Set the settings:
- *    - Description: "School Friends Profiles API"
- *    - Execute as: "Me" (your email)
- *    - Who has access: "Anyone" (allows your web page to read & write)
- * 9. Click "Deploy" and authorize permissions if prompted.
- * 10. Copy the "Web app URL" (looks like: https://script.google.com/macros/s/.../exec).
- * 11. Paste that URL into the "Connect Google Sheet" modal in your web application!
+ * HOW TO UPDATE / DEPLOY IN 1 MINUTE:
+ * 1. Open Google Sheets (sheets.google.com) and open your profile sheet.
+ * 2. Click Extensions > Apps Script in the top menu.
+ * 3. Delete any code in the editor and PASTE this ENTIRE code.
+ * 4. Click the "Save" (disk 💾) icon or press Ctrl + S.
+ * 5. Click "Deploy" > "Manage deployments".
+ * 6. Click the pencil ✏️ (Edit) icon next to the active Web App.
+ * 7. Under "Version", select "New version".
+ * 8. Click "Deploy".
+ * 
+ * NOTE: The script automatically detects your existing sheet columns,
+ * safely adds missing headers ("bloodGroup", "willingToDonate") without
+ * corrupting existing data, and dynamically matches row values by header name.
  */
 
-// Headers definition
+// Canonical headers definition
 var HEADERS = [
   "id",
   "name",
@@ -100,7 +98,7 @@ function doGet(e) {
 }
 
 /**
- * Handle POST requests - Store newly registered profile into the sheet
+ * Handle POST requests - Store or update registered profile into the sheet
  */
 function doPost(e) {
   try {
@@ -137,34 +135,73 @@ function doPost(e) {
     var photo = payload.photo || "";
     var registeredAt = payload.registeredAt || new Date().toISOString();
 
-    // Append as a new row in Google Sheet
-    sheet.appendRow([
-      id,
-      name,
-      gender,
-      dob,
-      bloodGroup,
-      willingToDonate,
-      occupationType,
-      jobDesignation,
-      currentJob,
-      companyName,
-      currentCity,
-      businessLocation,
-      workingSector,
-      businessCategory,
-      businessWebsite,
-      phone,
-      email,
-      photo,
-      registeredAt
-    ]);
+    var normalizedData = {
+      id: id,
+      name: name,
+      gender: gender,
+      dob: dob,
+      bloodGroup: bloodGroup,
+      willingToDonate: willingToDonate,
+      occupationType: occupationType,
+      jobDesignation: jobDesignation,
+      currentJob: currentJob,
+      companyName: companyName,
+      currentCity: currentCity,
+      businessLocation: businessLocation,
+      workingSector: workingSector,
+      businessCategory: businessCategory,
+      businessWebsite: businessWebsite,
+      phone: phone,
+      email: email,
+      photo: photo,
+      registeredAt: registeredAt
+    };
 
-    return jsonResponse({
-      status: "success",
-      message: "Profile for " + name + " stored successfully in Google Sheet",
-      profileId: id
+    // Dynamically retrieve sheet headers so row values map to exact columns
+    var lastCol = sheet.getLastColumn();
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h) {
+      return String(h).trim();
     });
+
+    // Check if profile ID already exists (for edits/updates)
+    var allData = sheet.getDataRange().getValues();
+    var idColIdx = headers.indexOf("id");
+    var existingRowIdx = -1;
+
+    if (idColIdx !== -1 && allData.length > 1) {
+      for (var r = 1; r < allData.length; r++) {
+        if (String(allData[r][idColIdx]).trim() === String(id).trim()) {
+          existingRowIdx = r + 1; // 1-indexed for SpreadsheetApp
+          break;
+        }
+      }
+    }
+
+    // Build row array in the exact column sequence of the sheet
+    var rowValues = [];
+    for (var c = 0; c < headers.length; c++) {
+      var headerKey = headers[c];
+      var val = normalizedData.hasOwnProperty(headerKey) ? normalizedData[headerKey] : (payload[headerKey] !== undefined ? payload[headerKey] : "");
+      rowValues.push(val);
+    }
+
+    if (existingRowIdx > 0) {
+      // Update existing row in place
+      sheet.getRange(existingRowIdx, 1, 1, rowValues.length).setValues([rowValues]);
+      return jsonResponse({
+        status: "success",
+        message: "Profile for " + name + " updated successfully in Google Sheet",
+        profileId: id
+      });
+    } else {
+      // Append new row
+      sheet.appendRow(rowValues);
+      return jsonResponse({
+        status: "success",
+        message: "Profile for " + name + " stored successfully in Google Sheet",
+        profileId: id
+      });
+    }
 
   } catch (error) {
     return jsonResponse({
@@ -175,7 +212,7 @@ function doPost(e) {
 }
 
 /**
- * Helper to get or create sheet with headers
+ * Helper to get active sheet and automatically ensure all headers exist
  */
 function getOrCreateSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -189,6 +226,26 @@ function getOrCreateSheet() {
     headerRange.setBackground("#4f46e5");
     headerRange.setFontColor("#ffffff");
     sheet.setFrozenRows(1);
+    return sheet;
+  }
+
+  // Auto-upgrade existing sheet if missing headers
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var existingHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h) {
+    return String(h).trim();
+  });
+
+  for (var k = 0; k < HEADERS.length; k++) {
+    var reqHeader = HEADERS[k];
+    if (existingHeaders.indexOf(reqHeader) === -1) {
+      var newCol = sheet.getLastColumn() + 1;
+      var cell = sheet.getRange(1, newCol);
+      cell.setValue(reqHeader);
+      cell.setFontWeight("bold");
+      cell.setBackground("#4f46e5");
+      cell.setFontColor("#ffffff");
+      existingHeaders.push(reqHeader);
+    }
   }
 
   return sheet;
