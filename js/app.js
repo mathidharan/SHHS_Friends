@@ -6,6 +6,7 @@
 const STORAGE_KEY = 'school_friends_profiles_data_v1';
 const THEME_KEY = 'sfp_theme_mode';
 const GOOGLE_SHEET_KEY = 'sfp_google_sheet_url_v1';
+const DEFAULT_GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxKGDkCxSE-_AfDyD5aot0Em6vfoGGDmHGcd7yBwFztLynUewW60KJiYAfKMijQGyVUtw/exec';
 
 // Default seed records matching data.json
 const DEFAULT_PROFILES = [
@@ -66,9 +67,13 @@ const DEFAULT_PROFILES = [
 const ProfileManager = {
   _sheetFetchedOnce: false,
 
-  // Get configured Google Apps Script Web App URL
+  // Get configured Google Apps Script Web App URL (hidden default for public use)
   getGoogleSheetUrl() {
-    return localStorage.getItem(GOOGLE_SHEET_KEY) || '';
+    const stored = localStorage.getItem(GOOGLE_SHEET_KEY);
+    if (stored && stored.trim()) {
+      return stored.trim();
+    }
+    return DEFAULT_GOOGLE_SHEET_URL;
   },
 
   // Save or clear Google Apps Script Web App URL
@@ -83,10 +88,11 @@ const ProfileManager = {
 
   // Test connection to Google Apps Script Web App
   async testGoogleSheetConnection(url) {
-    if (!url || !url.trim()) {
-      throw new Error('Please enter a valid Google Apps Script Web App URL');
+    const targetUrl = (url && url.trim()) ? url.trim() : this.getGoogleSheetUrl();
+    if (!targetUrl) {
+      throw new Error('Google Apps Script URL is not configured');
     }
-    const testUrl = url.trim() + (url.includes('?') ? '&' : '?') + 'action=getProfiles&_t=' + Date.now();
+    const testUrl = targetUrl + (targetUrl.includes('?') ? '&' : '?') + 'action=getProfiles&_t=' + Date.now();
     const res = await fetch(testUrl);
     if (!res.ok) {
       throw new Error(`Google Apps Script responded with HTTP status ${res.status}`);
@@ -113,37 +119,58 @@ const ProfileManager = {
         const result = await response.json();
         if (result && result.status === 'success' && Array.isArray(result.data)) {
           this._sheetFetchedOnce = true;
-          // Normalize profiles to match internal schema
-          const normalized = result.data.map(item => ({
-            id: item.id || ('sfp-' + Math.random().toString(36).substring(2, 7)),
-            name: item.name || '',
-            gender: item.gender || 'Male',
-            dob: item.dob || '',
-            bloodGroup: item.bloodGroup || '',
-            willingToDonate: item.willingToDonate === 'Yes' || item.willingToDonate === true ? 'Yes' : (item.willingToDonate || 'No'),
-            occupationType: item.occupationType || (item.workingSector === 'Self' ? 'Business' : 'Working'),
-            currentJob: item.currentJob || item.businessName || '',
-            jobDesignation: item.jobDesignation || '',
-            companyName: item.companyName || '',
-            businessName: item.businessName || (item.occupationType === 'Business' ? item.currentJob : ''),
-            currentCity: item.currentCity || '',
-            businessLocation: item.businessLocation || '',
-            workingSector: item.workingSector || (item.occupationType === 'Business' ? 'Self' : 'Private'),
-            businessCategory: item.businessCategory || '',
-            businessWebsite: item.businessWebsite || '',
-            phone: item.phone || '',
-            email: item.email || '',
-            photo: item.photo || '',
-            registeredAt: item.registeredAt || new Date().toISOString()
-          }));
+          // Normalize profiles to match internal schema and filter empty entries
+          const normalized = result.data
+            .filter(item => item && (item.name || '').trim().length > 0)
+            .map(item => {
+              // Normalize dob to YYYY-MM-DD format if it's a date string
+              let dobFormatted = (item.dob || '').trim();
+              if (dobFormatted) {
+                const parsedDate = new Date(dobFormatted);
+                if (!isNaN(parsedDate.getTime())) {
+                  const yyyy = parsedDate.getFullYear();
+                  const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                  const dd = String(parsedDate.getDate()).padStart(2, '0');
+                  dobFormatted = `${yyyy}-${mm}-${dd}`;
+                }
+              }
 
-          // Always update local storage with fresh Google Sheet data
-          this.saveProfiles(normalized);
-          return normalized;
+              const occType = item.occupationType || (item.workingSector === 'Self' ? 'Business' : 'Working');
+              const isDonor = item.willingToDonate === 'Yes' || item.willingToDonate === true;
+
+              return {
+                id: item.id || ('sfp-' + Math.random().toString(36).substring(2, 7)),
+                name: (item.name || '').trim(),
+                gender: item.gender || 'Male',
+                dob: dobFormatted,
+                bloodGroup: (item.bloodGroup || '').trim(),
+                willingToDonate: isDonor ? 'Yes' : 'No',
+                occupationType: occType,
+                currentJob: item.currentJob || item.businessName || '',
+                jobDesignation: item.jobDesignation || '',
+                companyName: item.companyName || '',
+                businessName: item.businessName || (occType === 'Business' ? item.currentJob : ''),
+                currentCity: item.currentCity || '',
+                businessLocation: item.businessLocation || '',
+                workingSector: item.workingSector || (occType === 'Business' ? 'Self' : 'Private'),
+                businessCategory: item.businessCategory || '',
+                businessWebsite: item.businessWebsite || '',
+                phone: item.phone || '',
+                email: item.email || '',
+                photo: item.photo || ProfileManager.getDefaultAvatar(item.gender),
+                registeredAt: item.registeredAt || new Date().toISOString()
+              };
+            });
+
+          if (normalized.length > 0) {
+            // Always update local storage with fresh Google Sheet data
+            this.saveProfiles(normalized);
+            return normalized;
+          }
         }
       }
     } catch (sheetErr) {
-      console.warn('Failed to load live data from Google Sheet, falling back to local cache:', sheetErr);
+      console.warn('Failed to load live data from Database, falling back to local cache:', sheetErr);
     }
     return null;
   },
@@ -176,7 +203,7 @@ const ProfileManager = {
         });
         return true;
       } catch (err2) {
-        console.error('Google Sheet POST failed:', err2);
+        console.error('Database POST failed:', err2);
         return false;
       }
     }
@@ -256,9 +283,9 @@ const ProfileManager = {
     if (sheetUrl) {
       this.syncToGoogleSheet(newProfile).then(success => {
         if (success) {
-          showToast('☁️ Saved locally & stored in Google Sheet!', 'success');
+          showToast('☁️ Saved locally & stored in Database!', 'success');
         } else {
-          showToast('Saved locally (Google Sheet sync failed)', 'warning');
+          showToast('Saved locally (Database sync failed)', 'warning');
         }
       });
     }
@@ -462,7 +489,7 @@ function injectGoogleSheetModal() {
         <div class="sheet-modal-header">
           <div class="sheet-modal-title" id="sheetModalTitle">
             <i class="fas fa-file-excel"></i>
-            <span>Google Sheets Live Synchronization</span>
+            <span>Database Live Synchronization</span>
           </div>
           <button type="button" class="sheet-modal-close" id="closeSheetModalBtn" aria-label="Close modal">
             <i class="fas fa-times"></i>
@@ -476,7 +503,7 @@ function injectGoogleSheetModal() {
               <span class="pulse-dot" id="modalStatusDot"></span>
               <div class="sheet-status-text">
                 <h4 id="modalStatusTitle">Checking status...</h4>
-                <p id="modalStatusSubtitle">Connect your Google Sheet to auto-store registrations and read data</p>
+                <p id="modalStatusSubtitle">Connect your Database to auto-store registrations and read data</p>
               </div>
             </div>
             <div id="modalStatusActions">
@@ -502,7 +529,7 @@ function injectGoogleSheetModal() {
               </button>
             </div>
             <span style="font-size: 0.78rem; color: var(--text-dim);">
-              100% Free: Handled by Google Apps Script attached to your Google Sheet. No paid subscriptions needed.
+              100% Free: Handled by Google Apps Script attached to your. No paid subscriptions needed.
             </span>
           </div>
 
@@ -514,7 +541,7 @@ function injectGoogleSheetModal() {
             </div>
             <div class="sheet-steps-content" id="stepsContent" style="display: none;">
               <ol>
-                <li>Open <strong><a href="https://sheets.google.com" target="_blank" style="color: #38bdf8;">Google Sheets</a></strong> and create a blank sheet.</li>
+                <li>Open <strong><a href="https://sheets.google.com" target="_blank" style="color: #38bdf8;">Sheets</a></strong> and create a blank sheet.</li>
                 <li>Click <strong>Extensions &gt; Apps Script</strong> in the top menu.</li>
                 <li>Paste the script code below into the editor, replacing everything.</li>
                 <li>Click the <strong>Save (💾)</strong> icon.</li>
@@ -587,7 +614,7 @@ function doPost(e) {
       payload.phone || "", payload.email || "", payload.photo || "",
       payload.registeredAt || new Date().toISOString()
     ]);
-    return jsonResponse({ status: "success", message: "Saved in Google Sheet", profileId: id });
+    return jsonResponse({ status: "success", message: "Saved ", profileId: id });
   } catch (error) {
     return jsonResponse({ status: "error", message: error.toString() });
   }
@@ -694,7 +721,7 @@ function attachModalEventListeners() {
         const userConfirm = confirm(`Could not verify URL directly (${err.message}). Save anyway? (Make sure deployment access is set to 'Anyone')`);
         if (userConfirm) {
           ProfileManager.setGoogleSheetUrl(url);
-          showToast('Google Sheet URL saved.', 'info');
+          showToast(' Sheet URL saved.', 'info');
           refreshModalState();
         }
       } finally {
@@ -706,10 +733,10 @@ function attachModalEventListeners() {
 
   if (disconnectBtn) {
     disconnectBtn.addEventListener('click', () => {
-      if (confirm('Disconnect this Google Sheet? Local cached data will remain safe.')) {
+      if (confirm('Disconnect this Database? Local cached data will remain safe.')) {
         ProfileManager.setGoogleSheetUrl('');
         urlInput.value = '';
-        showToast('Google Sheet disconnected.', 'info');
+        showToast('Database disconnected.', 'info');
         refreshModalState();
       }
     });
@@ -727,12 +754,12 @@ function attachModalEventListeners() {
       try {
         const data = await ProfileManager.fetchFromSheet();
         if (data) {
-          showToast(`Synced ${data.length} profiles from Google Sheet!`, 'success');
+          showToast(`Synced ${data.length} profiles!`, 'success');
           if (typeof window.renderProfilesFromRemote === 'function') {
             window.renderProfilesFromRemote();
           }
         } else {
-          showToast('No new data retrieved from sheet', 'info');
+          showToast('No new data retrieved', 'info');
         }
       } catch (e) {
         showToast('Sync failed: ' + e.message, 'error');
@@ -781,10 +808,11 @@ function refreshModalState() {
 }
 
 function openGoogleSheetModal() {
-  injectGoogleSheetModal();
-  refreshModalState();
-  const modal = document.getElementById('googleSheetModal');
-  if (modal) modal.classList.add('open');
+  // Public mode: The Google Sheet URL is hidden and handled automatically.
+  // Directly trigger live sync from the sheet without prompting the user.
+  if (typeof window.renderProfilesFromRemote === 'function') {
+    window.renderProfilesFromRemote(true);
+  }
 }
 
 function closeGoogleSheetModal() {
@@ -793,7 +821,7 @@ function closeGoogleSheetModal() {
 }
 
 function initGoogleSheetUI() {
-  injectGoogleSheetModal();
+  // Public mode: do not inject the setup modal or ask for URL
 }
 
 // Initialize on document ready
