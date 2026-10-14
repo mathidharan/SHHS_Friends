@@ -119,6 +119,15 @@ const ProfileManager = {
         const result = await response.json();
         if (result && result.status === 'success' && Array.isArray(result.data)) {
           this._sheetFetchedOnce = true;
+          // Build map of existing cached profiles to preserve local values (e.g. blood group) if remote field is empty
+          let localMap = {};
+          try {
+            const cachedProfiles = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            if (Array.isArray(cachedProfiles)) {
+              cachedProfiles.forEach(p => { if (p && p.id) localMap[p.id] = p; });
+            }
+          } catch (e) {}
+
           // Normalize profiles to match internal schema and filter empty entries
           const normalized = result.data
             .filter(item => item && (item.name || '').trim().length > 0)
@@ -135,30 +144,32 @@ const ProfileManager = {
                 }
               }
 
-              const occType = item.occupationType || (item.workingSector === 'Self' ? 'Business' : 'Working');
-              const isDonor = item.willingToDonate === 'Yes' || item.willingToDonate === true;
+              const localMatch = localMap[item.id] || {};
+              const occType = item.occupationType || localMatch.occupationType || (item.workingSector === 'Self' ? 'Business' : 'Working');
+              const rawBlood = (item.bloodGroup || '').trim() || (localMatch.bloodGroup || '').trim();
+              const isDonor = item.willingToDonate === 'Yes' || item.willingToDonate === true || localMatch.willingToDonate === 'Yes' || localMatch.willingToDonate === true;
 
               return {
                 id: item.id || ('sfp-' + Math.random().toString(36).substring(2, 7)),
                 name: (item.name || '').trim(),
-                gender: item.gender || 'Male',
+                gender: item.gender || localMatch.gender || 'Male',
                 dob: dobFormatted,
-                bloodGroup: (item.bloodGroup || '').trim(),
+                bloodGroup: rawBlood,
                 willingToDonate: isDonor ? 'Yes' : 'No',
                 occupationType: occType,
-                currentJob: item.currentJob || item.businessName || '',
-                jobDesignation: item.jobDesignation || '',
-                companyName: item.companyName || '',
-                businessName: item.businessName || (occType === 'Business' ? item.currentJob : ''),
-                currentCity: item.currentCity || '',
-                businessLocation: item.businessLocation || '',
-                workingSector: item.workingSector || (occType === 'Business' ? 'Self' : 'Private'),
-                businessCategory: item.businessCategory || '',
-                businessWebsite: item.businessWebsite || '',
-                phone: item.phone || '',
-                email: item.email || '',
-                photo: item.photo || ProfileManager.getDefaultAvatar(item.gender),
-                registeredAt: item.registeredAt || new Date().toISOString()
+                currentJob: item.currentJob || item.businessName || localMatch.currentJob || '',
+                jobDesignation: item.jobDesignation || localMatch.jobDesignation || '',
+                companyName: item.companyName || localMatch.companyName || '',
+                businessName: item.businessName || localMatch.businessName || (occType === 'Business' ? item.currentJob : ''),
+                currentCity: item.currentCity || localMatch.currentCity || '',
+                businessLocation: item.businessLocation || localMatch.businessLocation || '',
+                workingSector: item.workingSector || localMatch.workingSector || (occType === 'Business' ? 'Self' : 'Private'),
+                businessCategory: item.businessCategory || localMatch.businessCategory || '',
+                businessWebsite: item.businessWebsite || localMatch.businessWebsite || '',
+                phone: item.phone || localMatch.phone || '',
+                email: item.email || localMatch.email || '',
+                photo: item.photo || localMatch.photo || ProfileManager.getDefaultAvatar(item.gender),
+                registeredAt: item.registeredAt || localMatch.registeredAt || new Date().toISOString()
               };
             });
 
@@ -300,6 +311,13 @@ const ProfileManager = {
     if (index !== -1) {
       profiles[index] = { ...profiles[index], ...updatedFields };
       this.saveProfiles(profiles);
+
+      // Also sync update to Google Sheet
+      const sheetUrl = this.getGoogleSheetUrl();
+      if (sheetUrl) {
+        this.syncToGoogleSheet(profiles[index]);
+      }
+
       return profiles[index];
     }
     return null;
@@ -602,19 +620,53 @@ function doPost(e) {
     } else if (e && e.parameter) {
       payload = e.parameter;
     }
-    var id = payload.id || ("sfp-" + new Date().getTime().toString(36));
-    sheet.appendRow([
-      id, payload.name || "", payload.gender || "", payload.dob || "",
-      payload.bloodGroup || "", payload.willingToDonate === 'Yes' ? "Yes" : "No",
-      payload.occupationType || "Working", payload.jobDesignation || "",
-      payload.currentJob || payload.businessName || "", payload.companyName || "",
-      payload.currentCity || "", payload.businessLocation || "",
-      payload.workingSector || (payload.occupationType === "Business" ? "Self" : "Private"),
-      payload.businessCategory || "", payload.businessWebsite || "",
-      payload.phone || "", payload.email || "", payload.photo || "",
-      payload.registeredAt || new Date().toISOString()
-    ]);
-    return jsonResponse({ status: "success", message: "Saved ", profileId: id });
+    var id = payload.id || ("sfp-" + new Date().getTime().toString(36) + Math.random().toString(36).substring(2, 5));
+    var norm = {
+      id: id,
+      name: payload.name || "",
+      gender: payload.gender || "",
+      dob: payload.dob || "",
+      bloodGroup: payload.bloodGroup || "",
+      willingToDonate: (payload.willingToDonate === 'Yes' || payload.willingToDonate === true) ? "Yes" : "No",
+      occupationType: payload.occupationType || "Working",
+      jobDesignation: payload.jobDesignation || "",
+      currentJob: payload.currentJob || payload.businessName || "",
+      companyName: payload.companyName || "",
+      currentCity: payload.currentCity || "",
+      businessLocation: payload.businessLocation || "",
+      workingSector: payload.workingSector || (payload.occupationType === "Business" ? "Self" : "Private"),
+      businessCategory: payload.businessCategory || "",
+      businessWebsite: payload.businessWebsite || "",
+      phone: payload.phone || "",
+      email: payload.email || "",
+      photo: payload.photo || "",
+      registeredAt: payload.registeredAt || new Date().toISOString()
+    };
+    var lastCol = sheet.getLastColumn();
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h) { return String(h).trim(); });
+    var allData = sheet.getDataRange().getValues();
+    var idColIdx = headers.indexOf("id");
+    var existingRowIdx = -1;
+    if (idColIdx !== -1 && allData.length > 1) {
+      for (var r = 1; r < allData.length; r++) {
+        if (String(allData[r][idColIdx]).trim() === String(id).trim()) {
+          existingRowIdx = r + 1;
+          break;
+        }
+      }
+    }
+    var rowValues = [];
+    for (var c = 0; c < headers.length; c++) {
+      var h = headers[c];
+      rowValues.push(norm.hasOwnProperty(h) ? norm[h] : (payload[h] || ""));
+    }
+    if (existingRowIdx > 0) {
+      sheet.getRange(existingRowIdx, 1, 1, rowValues.length).setValues([rowValues]);
+      return jsonResponse({ status: "success", message: "Updated in Sheet", profileId: id });
+    } else {
+      sheet.appendRow(rowValues);
+      return jsonResponse({ status: "success", message: "Saved in Sheet", profileId: id });
+    }
   } catch (error) {
     return jsonResponse({ status: "error", message: error.toString() });
   }
@@ -630,6 +682,21 @@ function getOrCreateSheet() {
     headerRange.setBackground("#4f46e5");
     headerRange.setFontColor("#ffffff");
     sheet.setFrozenRows(1);
+    return sheet;
+  }
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var existing = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h) { return String(h).trim(); });
+  for (var k = 0; k < HEADERS.length; k++) {
+    var req = HEADERS[k];
+    if (existing.indexOf(req) === -1) {
+      var newCol = sheet.getLastColumn() + 1;
+      var cell = sheet.getRange(1, newCol);
+      cell.setValue(req);
+      cell.setFontWeight("bold");
+      cell.setBackground("#4f46e5");
+      cell.setFontColor("#ffffff");
+      existing.push(req);
+    }
   }
   return sheet;
 }

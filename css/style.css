@@ -533,6 +533,29 @@ a {
   color: var(--primary);
 }
 
+/* Gender Selection Active Highlights */
+.sector-option input[name="gender"][value="Male"]:checked + .sector-label {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+  color: #fff;
+}
+
+[data-theme="light"] .sector-option input[name="gender"][value="Male"]:checked + .sector-label {
+  color: #0284c7;
+}
+
+.sector-option input[name="gender"][value="Female"]:checked + .sector-label {
+  border-color: #f472b6;
+  background: rgba(244, 114, 182, 0.15);
+  box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.35);
+  color: #fff;
+}
+
+[data-theme="light"] .sector-option input[name="gender"][value="Female"]:checked + .sector-label {
+  color: #db2777;
+}
+
 .sector-label i {
   font-size: 1.25rem;
 }
@@ -919,6 +942,24 @@ a {
   color: #991b1b;
   border-color: #f87171;
 }
+
+.blood-badge.neutral {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-dim);
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: none;
+}
+
+.blood-badge.neutral i {
+  color: var(--text-dim);
+}
+
+[data-theme="light"] .blood-badge.neutral {
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+
 
 .donor-toggle-card {
   display: flex;

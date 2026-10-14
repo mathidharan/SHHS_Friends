@@ -111,29 +111,20 @@
                 <span>Gender</span> <span class="required">*</span>
               </label>
               <div style="display: flex; gap: 0.75rem; margin-top: 0.25rem;">
-                <label style="flex: 1; cursor: pointer;">
-                  <input type="radio" name="gender" value="Male" checked style="display: none;" id="genderMale">
-                  <div class="sector-label"
-                    onclick="document.getElementById('genderMale').checked = true; document.getElementById('genderMale').dispatchEvent(new Event('change'))">
+                <label class="sector-option" style="flex: 1; cursor: pointer;">
+                  <input type="radio" name="gender" value="Male" id="genderMale" checked>
+                  <div class="sector-label">
                     <i class="fas fa-mars" style="color:#38bdf8;"></i>
                     <span>Male</span>
                   </div>
                 </label>
-                <label style="flex: 1; cursor: pointer;">
-                  <input type="radio" name="gender" value="Female" style="display: none;" id="genderFemale">
-                  <div class="sector-label"
-                    onclick="document.getElementById('genderFemale').checked = true; document.getElementById('genderFemale').dispatchEvent(new Event('change'))">
+                <label class="sector-option" style="flex: 1; cursor: pointer;">
+                  <input type="radio" name="gender" value="Female" id="genderFemale">
+                  <div class="sector-label">
                     <i class="fas fa-venus" style="color:#f472b6;"></i>
                     <span>Female</span>
                   </div>
                 </label>
-                <!-- <label style="flex: 1; cursor: pointer;">
-                  <input type="radio" name="gender" value="Other" style="display: none;" id="genderOther">
-                  <div class="sector-label" onclick="document.getElementById('genderOther').checked = true; document.getElementById('genderOther').dispatchEvent(new Event('change'))">
-                    <i class="fas fa-genderless" style="color:#a78bfa;"></i>
-                    <span>Other</span>
-                  </div>
-                </label> -->
               </div>
             </div>
 
@@ -156,12 +147,12 @@
               <div class="input-wrapper">
                 <i class="fas fa-tint input-icon" style="color: #ef4444;"></i>
                 <select id="bloodGroup" class="form-control" required style="padding-left: 2.75rem;">
-                  <option value="" disabled>Select Blood Group</option>
+                  <option value="" selected disabled>Select Blood Group</option>
                   <option value="A+">A+ (A Positive)</option>
                   <option value="A-">A- (A Negative)</option>
                   <option value="B+">B+ (B Positive)</option>
                   <option value="B-">B- (B Negative)</option>
-                  <option value="O+" selected>O+ (O Positive)</option>
+                  <option value="O+">O+ (O Positive)</option>
                   <option value="O-">O- (O Negative)</option>
                   <option value="AB+">AB+ (AB Positive)</option>
                   <option value="AB-">AB- (AB Negative)</option>
@@ -492,8 +483,8 @@
                   <span class="biz-gender-tag" id="previewGender">
                     <i class="fas fa-mars"></i> Male
                   </span>
-                  <span class="blood-badge donor" id="previewBloodBadge" title="Blood Group & Donor Status">
-                    <i class="fas fa-heartbeat"></i> <span id="previewBloodText">O+ &bull; Donor</span>
+                  <span class="blood-badge neutral" id="previewBloodBadge" title="Blood Group & Donor Status">
+                    <i class="fas fa-tint"></i> <span id="previewBloodText">Blood: N/A</span>
                   </span>
                 </div>
               </div>
@@ -504,9 +495,13 @@
               </div>
 
               <div class="biz-meta-grid">
-                <div class="biz-meta-item">
+                <div class="biz-meta-item" title="Date of Birth">
                   <i class="fas fa-birthday-cake"></i>
                   <div><strong id="previewDob">20 May 1995</strong></div>
+                </div>
+                <div class="biz-meta-item" title="Blood Group &amp; Donor Status">
+                  <i class="fas fa-heartbeat" style="color: #ef4444;"></i>
+                  <div>Blood: <strong id="previewMetaBlood">Not specified</strong></div>
                 </div>
                 <div class="biz-meta-item">
                   <i class="fas fa-map-marker-alt"></i>
