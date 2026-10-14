@@ -256,26 +256,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   const syncBtn = document.getElementById('syncSheetBtn');
   if (syncBtn) {
     syncBtn.addEventListener('click', async () => {
-      const sheetUrl = ProfileManager.getGoogleSheetUrl();
-      if (!sheetUrl) {
-        openGoogleSheetModal();
-        return;
-      }
       syncBtn.disabled = true;
       syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
       try {
         const data = await ProfileManager.fetchFromSheet();
         await renderProfiles(true);
-        if (data) {
-          showToast(`Refreshed ${data.length} profiles!`, 'success');
+        if (data && data.length > 0) {
+          showToast(`⚡ Synced ${data.length} profile${data.length === 1 ? '' : 's'} from Google Sheet!`, 'success');
         } else {
-          showToast('Directory up to date', 'info');
+          showToast('Directory synchronized with Google Sheet', 'info');
         }
       } catch (err) {
-        showToast('Sync failed: ' + err.message, 'error');
+        showToast('Sync failed: ' + (err.message || 'Network error'), 'error');
       } finally {
         syncBtn.disabled = false;
-        syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Sheet';
+        syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync';
       }
     });
   }

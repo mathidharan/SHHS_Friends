@@ -40,11 +40,11 @@ This project connects your HTML registration form and directory page directly to
    https://script.google.com/macros/s/AKfycbx.../exec
    ```
 
-### Step 4: Connect in the Web Application
-1. Open your web app (`index.html` or `profiles.html`).
-2. Click the **📊 Connect Google Sheet** button in the top navigation bar.
-3. Paste your Web App URL into the box.
-4. Click **Test & Save Connection**.
-5. You're done! 
-   - Every registration submitted on `index.html` will now immediately appear as a new row in your Google Sheet!
-   - Every visit to `profiles.html` will display all profiles loaded straight from your Google Sheet.
+### Step 4: Web Application Integration
+The Web App URL has been embedded directly into `js/app.js` as the default internal endpoint:
+```
+https://script.google.com/macros/s/AKfycbxKGDkCxSE-_AfDyD5aot0Em6vfoGGDmHGcd7yBwFztLynUewW60KJiYAfKMijQGyVUtw/exec
+```
+- **Hidden & Public Ready**: Visitors to the public page are never prompted for URLs or setup modals.
+- **Auto-Sync on Registration**: Registrations on `index.html` save locally and immediately append a row to your Google Sheet.
+- **One-Click Sync**: Clicking **Sync** on `profiles.html` fetches the latest entries from the Google Sheet and updates the cards instantly.
