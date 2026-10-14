@@ -1,9 +1,11 @@
 /**
  * School Friends Profile - Core Data & Application Manager
+ * Includes 100% Free Google Sheets Two-Way Synchronization
  */
 
 const STORAGE_KEY = 'school_friends_profiles_data_v1';
 const THEME_KEY = 'sfp_theme_mode';
+const GOOGLE_SHEET_KEY = 'sfp_google_sheet_url_v1';
 
 // Default seed records matching data.json
 const DEFAULT_PROFILES = [
@@ -17,6 +19,8 @@ const DEFAULT_PROFILES = [
     "jobDesignation": "Sr. CAM",
     "currentCity": "Salem",
     "workingSector": "Private",
+    "bloodGroup": "O+",
+    "willingToDonate": "Yes",
     "photo": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
     "phone": "+91 98842 98181",
     "email": "",
@@ -32,6 +36,8 @@ const DEFAULT_PROFILES = [
     "jobDesignation": "Territory Sales Incharge",
     "currentCity": "Salem",
     "workingSector": "Private",
+    "bloodGroup": "B+",
+    "willingToDonate": "Yes",
     "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
     "phone": "+91 90957 08567",
     "email": "",
@@ -47,6 +53,8 @@ const DEFAULT_PROFILES = [
     "jobDesignation": "Assistant Professor",
     "currentCity": "Pudukkottai",
     "workingSector": "Private",
+    "bloodGroup": "A+",
+    "willingToDonate": "No",
     "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     "phone": "+91 95974 84321",
     "email": "",
@@ -56,14 +64,141 @@ const DEFAULT_PROFILES = [
 
 // Profile Manager
 const ProfileManager = {
-  // Load profiles from LocalStorage or fallback to seed / data.json
-  async getProfiles() {
+  _sheetFetchedOnce: false,
+
+  // Get configured Google Apps Script Web App URL
+  getGoogleSheetUrl() {
+    return localStorage.getItem(GOOGLE_SHEET_KEY) || '';
+  },
+
+  // Save or clear Google Apps Script Web App URL
+  setGoogleSheetUrl(url) {
+    if (!url || !url.trim()) {
+      localStorage.removeItem(GOOGLE_SHEET_KEY);
+    } else {
+      localStorage.setItem(GOOGLE_SHEET_KEY, url.trim());
+    }
+    updateGoogleSheetNavBadge();
+  },
+
+  // Test connection to Google Apps Script Web App
+  async testGoogleSheetConnection(url) {
+    if (!url || !url.trim()) {
+      throw new Error('Please enter a valid Google Apps Script Web App URL');
+    }
+    const testUrl = url.trim() + (url.includes('?') ? '&' : '?') + 'action=getProfiles&_t=' + Date.now();
+    const res = await fetch(testUrl);
+    if (!res.ok) {
+      throw new Error(`Google Apps Script responded with HTTP status ${res.status}`);
+    }
+    const json = await res.json();
+    if (json && json.status === 'success') {
+      return {
+        success: true,
+        count: Array.isArray(json.data) ? json.data.length : (json.count || 0)
+      };
+    }
+    throw new Error(json.message || 'Unexpected response format from Google Apps Script');
+  },
+
+  // Fetch profiles directly from Google Sheet
+  async fetchFromSheet() {
+    const sheetUrl = this.getGoogleSheetUrl();
+    if (!sheetUrl) return null;
+
+    try {
+      const urlWithParam = sheetUrl + (sheetUrl.includes('?') ? '&' : '?') + 'action=getProfiles&_t=' + Date.now();
+      const response = await fetch(urlWithParam);
+      if (response.ok) {
+        const result = await response.json();
+        if (result && result.status === 'success' && Array.isArray(result.data)) {
+          this._sheetFetchedOnce = true;
+          // Normalize profiles to match internal schema
+          const normalized = result.data.map(item => ({
+            id: item.id || ('sfp-' + Math.random().toString(36).substring(2, 7)),
+            name: item.name || '',
+            gender: item.gender || 'Male',
+            dob: item.dob || '',
+            bloodGroup: item.bloodGroup || '',
+            willingToDonate: item.willingToDonate === 'Yes' || item.willingToDonate === true ? 'Yes' : (item.willingToDonate || 'No'),
+            occupationType: item.occupationType || (item.workingSector === 'Self' ? 'Business' : 'Working'),
+            currentJob: item.currentJob || item.businessName || '',
+            jobDesignation: item.jobDesignation || '',
+            companyName: item.companyName || '',
+            businessName: item.businessName || (item.occupationType === 'Business' ? item.currentJob : ''),
+            currentCity: item.currentCity || '',
+            businessLocation: item.businessLocation || '',
+            workingSector: item.workingSector || (item.occupationType === 'Business' ? 'Self' : 'Private'),
+            businessCategory: item.businessCategory || '',
+            businessWebsite: item.businessWebsite || '',
+            phone: item.phone || '',
+            email: item.email || '',
+            photo: item.photo || '',
+            registeredAt: item.registeredAt || new Date().toISOString()
+          }));
+
+          // Always update local storage with fresh Google Sheet data
+          this.saveProfiles(normalized);
+          return normalized;
+        }
+      }
+    } catch (sheetErr) {
+      console.warn('Failed to load live data from Google Sheet, falling back to local cache:', sheetErr);
+    }
+    return null;
+  },
+
+  // Push new profile row to Google Sheet
+  async syncToGoogleSheet(profilePayload) {
+    const sheetUrl = this.getGoogleSheetUrl();
+    if (!sheetUrl) return false;
+
+    try {
+      // POST with text/plain to prevent CORS preflight blocking in browsers
+      await fetch(sheetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(profilePayload)
+      });
+      return true;
+    } catch (err) {
+      // Secondary fallback with mode: no-cors
+      try {
+        await fetch(sheetUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(profilePayload)
+        });
+        return true;
+      } catch (err2) {
+        console.error('Google Sheet POST failed:', err2);
+        return false;
+      }
+    }
+  },
+
+  // Load profiles from Google Sheet (if configured) or LocalStorage or seed / data.json
+  async getProfiles(forceRefresh = false) {
+    // If Google Sheet is linked and refresh requested or not yet loaded from remote
+    const sheetUrl = this.getGoogleSheetUrl();
+    if (sheetUrl && (forceRefresh || !this._sheetFetchedOnce)) {
+      const remoteData = await this.fetchFromSheet();
+      if (remoteData && remoteData.length > 0) {
+        return remoteData;
+      }
+    }
+
+    // Check LocalStorage cache
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Seamless backward compatibility
           return parsed.map(item => ({
             occupationType: item.occupationType || (item.workingSector === 'Self' ? 'Business' : 'Working'),
             businessName: item.businessName || (item.occupationType === 'Business' ? item.currentJob : ''),
@@ -102,7 +237,7 @@ const ProfileManager = {
     this.updateHeaderBadge(profiles.length);
   },
 
-  // Add a single new profile
+  // Add a single new profile (saves locally & syncs to Google Sheet)
   async addProfile(profileData) {
     const profiles = await this.getProfiles();
     const newProfile = {
@@ -111,8 +246,23 @@ const ProfileManager = {
       photo: profileData.photo || this.getDefaultAvatar(profileData.gender),
       ...profileData
     };
-    profiles.unshift(newProfile); // Prepend to top
+
+    // Prepend to local list immediately for instant UI responsiveness
+    profiles.unshift(newProfile);
     this.saveProfiles(profiles);
+
+    // If Google Sheet is configured, send the record to Google Sheets
+    const sheetUrl = this.getGoogleSheetUrl();
+    if (sheetUrl) {
+      this.syncToGoogleSheet(newProfile).then(success => {
+        if (success) {
+          showToast('☁️ Saved locally & stored in Google Sheet!', 'success');
+        } else {
+          showToast('Saved locally (Google Sheet sync failed)', 'warning');
+        }
+      });
+    }
+
     return newProfile;
   },
 
@@ -249,7 +399,7 @@ function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  const iconClass = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+  const iconClass = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-triangle-exclamation' : 'fa-info-circle';
   toast.innerHTML = `
     <i class="fas ${iconClass}"></i>
     <span>${message}</span>
@@ -260,7 +410,7 @@ function showToast(message, type = 'info') {
     toast.style.opacity = '0';
     toast.style.transform = 'translateY(10px)';
     setTimeout(() => toast.remove(), 300);
-  }, 3200);
+  }, 3600);
 }
 
 // Theme management (Dark / Light)
@@ -294,8 +444,361 @@ function updateThemeIcon(theme) {
   }
 }
 
+// ==========================================================================
+// Google Sheets UI & Modal Management
+// ==========================================================================
+
+function updateGoogleSheetNavBadge() {
+  const btn = document.getElementById('googleSheetBtn');
+  if (btn) btn.remove();
+}
+
+function injectGoogleSheetModal() {
+  if (document.getElementById('googleSheetModal')) return;
+
+  const modalHtml = `
+    <div class="sheet-modal-backdrop" id="googleSheetModal" role="dialog" aria-modal="true" aria-labelledby="sheetModalTitle">
+      <div class="sheet-modal-card">
+        <div class="sheet-modal-header">
+          <div class="sheet-modal-title" id="sheetModalTitle">
+            <i class="fas fa-file-excel"></i>
+            <span>Google Sheets Live Synchronization</span>
+          </div>
+          <button type="button" class="sheet-modal-close" id="closeSheetModalBtn" aria-label="Close modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="sheet-modal-body">
+          <!-- Status Banner -->
+          <div class="sheet-status-box" id="sheetStatusBox">
+            <div class="sheet-status-info">
+              <span class="pulse-dot" id="modalStatusDot"></span>
+              <div class="sheet-status-text">
+                <h4 id="modalStatusTitle">Checking status...</h4>
+                <p id="modalStatusSubtitle">Connect your Google Sheet to auto-store registrations and read data</p>
+              </div>
+            </div>
+            <div id="modalStatusActions">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Web App URL Input -->
+          <div class="sheet-input-group">
+            <label for="googleSheetUrlInput">
+              <i class="fas fa-link" style="color: #10b981;"></i> Google Apps Script Web App URL
+            </label>
+            <div class="sheet-input-row">
+              <input 
+                type="url" 
+                id="googleSheetUrlInput" 
+                class="sheet-input" 
+                placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+                spellcheck="false"
+              />
+              <button type="button" class="btn btn-emerald btn-sm" id="saveSheetUrlBtn">
+                <i class="fas fa-save"></i> Save & Test
+              </button>
+            </div>
+            <span style="font-size: 0.78rem; color: var(--text-dim);">
+              100% Free: Handled by Google Apps Script attached to your Google Sheet. No paid subscriptions needed.
+            </span>
+          </div>
+
+          <!-- Step-by-step instructions accordion -->
+          <div class="sheet-steps-accordion">
+            <div class="sheet-steps-summary" id="toggleStepsBtn">
+              <span><i class="fas fa-magic" style="color: #f59e0b;"></i> Quick 2-Minute Setup Instructions</span>
+              <i class="fas fa-chevron-down" id="stepsChevron"></i>
+            </div>
+            <div class="sheet-steps-content" id="stepsContent" style="display: none;">
+              <ol>
+                <li>Open <strong><a href="https://sheets.google.com" target="_blank" style="color: #38bdf8;">Google Sheets</a></strong> and create a blank sheet.</li>
+                <li>Click <strong>Extensions &gt; Apps Script</strong> in the top menu.</li>
+                <li>Paste the script code below into the editor, replacing everything.</li>
+                <li>Click the <strong>Save (💾)</strong> icon.</li>
+                <li>Click <strong>Deploy &gt; New deployment</strong>, select type <strong>Web app</strong>.</li>
+                <li>Set <em>Execute as:</em> <strong>Me</strong> and <em>Who has access:</em> <strong>Anyone</strong>.</li>
+                <li>Click <strong>Deploy</strong>, grant permission, copy the <strong>Web app URL</strong>, and paste it into the box above!</li>
+              </ol>
+
+              <div style="font-weight: 600; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>Apps Script Code:</span>
+                <button type="button" class="btn-copy-code" id="copyAppsScriptBtn">
+                  <i class="fas fa-copy"></i> Copy Code
+                </button>
+              </div>
+
+              <div class="sheet-code-preview" id="appsScriptCodeSnippet">var HEADERS = [
+  "id", "name", "gender", "dob", "bloodGroup", "willingToDonate",
+  "occupationType", "jobDesignation", "currentJob", "companyName",
+  "currentCity", "businessLocation", "workingSector", "businessCategory",
+  "businessWebsite", "phone", "email", "photo", "registeredAt"
+];
+
+function doGet(e) {
+  try {
+    var sheet = getOrCreateSheet();
+    var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) {
+      return jsonResponse({ status: "success", count: 0, data: [] });
+    }
+    var headers = data[0];
+    var profiles = [];
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      if (!row[0] && !row[1]) continue;
+      var profile = {};
+      for (var j = 0; j < headers.length; j++) {
+        var key = String(headers[j]).trim();
+        var val = row[j];
+        if (val instanceof Date) {
+          val = (key === 'dob') ? Utilities.formatDate(val, Session.getScriptTimeZone(), 'yyyy-MM-dd') : val.toISOString();
+        }
+        profile[key] = (val !== undefined && val !== null) ? String(val) : '';
+      }
+      profiles.push(profile);
+    }
+    return jsonResponse({ status: "success", count: profiles.length, data: profiles });
+  } catch (error) {
+    return jsonResponse({ status: "error", message: error.toString() });
+  }
+}
+
+function doPost(e) {
+  try {
+    var sheet = getOrCreateSheet();
+    var payload = {};
+    if (e && e.postData && e.postData.contents) {
+      try { payload = JSON.parse(e.postData.contents); } catch (err) { payload = e.parameter || {}; }
+    } else if (e && e.parameter) {
+      payload = e.parameter;
+    }
+    var id = payload.id || ("sfp-" + new Date().getTime().toString(36));
+    sheet.appendRow([
+      id, payload.name || "", payload.gender || "", payload.dob || "",
+      payload.bloodGroup || "", payload.willingToDonate === 'Yes' ? "Yes" : "No",
+      payload.occupationType || "Working", payload.jobDesignation || "",
+      payload.currentJob || payload.businessName || "", payload.companyName || "",
+      payload.currentCity || "", payload.businessLocation || "",
+      payload.workingSector || (payload.occupationType === "Business" ? "Self" : "Private"),
+      payload.businessCategory || "", payload.businessWebsite || "",
+      payload.phone || "", payload.email || "", payload.photo || "",
+      payload.registeredAt || new Date().toISOString()
+    ]);
+    return jsonResponse({ status: "success", message: "Saved in Google Sheet", profileId: id });
+  } catch (error) {
+    return jsonResponse({ status: "error", message: error.toString() });
+  }
+}
+
+function getOrCreateSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getActiveSheet();
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(HEADERS);
+    var headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
+    headerRange.setFontWeight("bold");
+    headerRange.setBackground("#4f46e5");
+    headerRange.setFontColor("#ffffff");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function jsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet-modal-footer">
+          <button type="button" class="btn btn-outline btn-sm" id="closeSheetModalBtn2">
+            Close
+          </button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-danger btn-sm" id="disconnectSheetBtn" style="display: none;">
+              <i class="fas fa-unlink"></i> Disconnect Sheet
+            </button>
+            <button type="button" class="btn btn-emerald btn-sm" id="syncNowModalBtn">
+              <i class="fas fa-sync-alt"></i> Pull Data from Sheet Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  attachModalEventListeners();
+}
+
+function attachModalEventListeners() {
+  const modal = document.getElementById('googleSheetModal');
+  const closeBtn1 = document.getElementById('closeSheetModalBtn');
+  const closeBtn2 = document.getElementById('closeSheetModalBtn2');
+  const toggleStepsBtn = document.getElementById('toggleStepsBtn');
+  const stepsContent = document.getElementById('stepsContent');
+  const stepsChevron = document.getElementById('stepsChevron');
+  const saveBtn = document.getElementById('saveSheetUrlBtn');
+  const urlInput = document.getElementById('googleSheetUrlInput');
+  const disconnectBtn = document.getElementById('disconnectSheetBtn');
+  const syncNowBtn = document.getElementById('syncNowModalBtn');
+  const copyBtn = document.getElementById('copyAppsScriptBtn');
+
+  if (closeBtn1) closeBtn1.addEventListener('click', closeGoogleSheetModal);
+  if (closeBtn2) closeBtn2.addEventListener('click', closeGoogleSheetModal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeGoogleSheetModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('open')) {
+      closeGoogleSheetModal();
+    }
+  });
+
+  if (toggleStepsBtn) {
+    toggleStepsBtn.addEventListener('click', () => {
+      const isVisible = stepsContent.style.display !== 'none';
+      stepsContent.style.display = isVisible ? 'none' : 'block';
+      stepsChevron.className = isVisible ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+    });
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      const url = urlInput.value.trim();
+      if (!url) {
+        showToast('Please enter a Google Apps Script Web App URL', 'error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+
+      try {
+        const testRes = await ProfileManager.testGoogleSheetConnection(url);
+        ProfileManager.setGoogleSheetUrl(url);
+        showToast(`Connected successfully! Found ${testRes.count} profiles in sheet.`, 'success');
+        refreshModalState();
+        // If on profiles page, refresh directory
+        if (typeof window.renderProfilesFromRemote === 'function') {
+          window.renderProfilesFromRemote();
+        }
+      } catch (err) {
+        // Even if direct GET encounters a CORS redirect warning, allow saving with guidance
+        const userConfirm = confirm(`Could not verify URL directly (${err.message}). Save anyway? (Make sure deployment access is set to 'Anyone')`);
+        if (userConfirm) {
+          ProfileManager.setGoogleSheetUrl(url);
+          showToast('Google Sheet URL saved.', 'info');
+          refreshModalState();
+        }
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save & Test';
+      }
+    });
+  }
+
+  if (disconnectBtn) {
+    disconnectBtn.addEventListener('click', () => {
+      if (confirm('Disconnect this Google Sheet? Local cached data will remain safe.')) {
+        ProfileManager.setGoogleSheetUrl('');
+        urlInput.value = '';
+        showToast('Google Sheet disconnected.', 'info');
+        refreshModalState();
+      }
+    });
+  }
+
+  if (syncNowBtn) {
+    syncNowBtn.addEventListener('click', async () => {
+      const sheetUrl = ProfileManager.getGoogleSheetUrl();
+      if (!sheetUrl) {
+        showToast('Please connect a Google Sheet URL first', 'error');
+        return;
+      }
+      syncNowBtn.disabled = true;
+      syncNowBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+      try {
+        const data = await ProfileManager.fetchFromSheet();
+        if (data) {
+          showToast(`Synced ${data.length} profiles from Google Sheet!`, 'success');
+          if (typeof window.renderProfilesFromRemote === 'function') {
+            window.renderProfilesFromRemote();
+          }
+        } else {
+          showToast('No new data retrieved from sheet', 'info');
+        }
+      } catch (e) {
+        showToast('Sync failed: ' + e.message, 'error');
+      } finally {
+        syncNowBtn.disabled = false;
+        syncNowBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Pull Data from Sheet Now';
+      }
+    });
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      // Fetch full script or fallback to snippet
+      const fullScript = document.getElementById('appsScriptCodeSnippet').innerText;
+      navigator.clipboard.writeText(fullScript).then(() => {
+        copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => {
+          copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Code';
+        }, 2000);
+      });
+    });
+  }
+}
+
+function refreshModalState() {
+  const url = ProfileManager.getGoogleSheetUrl();
+  const urlInput = document.getElementById('googleSheetUrlInput');
+  const modalStatusDot = document.getElementById('modalStatusDot');
+  const modalStatusTitle = document.getElementById('modalStatusTitle');
+  const modalStatusSubtitle = document.getElementById('modalStatusSubtitle');
+  const disconnectBtn = document.getElementById('disconnectSheetBtn');
+
+  if (urlInput) urlInput.value = url;
+
+  if (url) {
+    if (modalStatusDot) modalStatusDot.className = 'pulse-dot active';
+    if (modalStatusTitle) modalStatusTitle.textContent = '🟢 Google Sheet Connected & Active';
+    if (modalStatusSubtitle) modalStatusSubtitle.textContent = 'New registrations will automatically write to your Google Sheet';
+    if (disconnectBtn) disconnectBtn.style.display = 'inline-flex';
+  } else {
+    if (modalStatusDot) modalStatusDot.className = 'pulse-dot inactive';
+    if (modalStatusTitle) modalStatusTitle.textContent = '⚪ Google Sheet Not Connected';
+    if (modalStatusSubtitle) modalStatusSubtitle.textContent = 'Paste your Google Apps Script Web App URL below to activate live sync';
+    if (disconnectBtn) disconnectBtn.style.display = 'none';
+  }
+}
+
+function openGoogleSheetModal() {
+  injectGoogleSheetModal();
+  refreshModalState();
+  const modal = document.getElementById('googleSheetModal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeGoogleSheetModal() {
+  const modal = document.getElementById('googleSheetModal');
+  if (modal) modal.classList.remove('open');
+}
+
+function initGoogleSheetUI() {
+  injectGoogleSheetModal();
+}
+
 // Initialize on document ready
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  initGoogleSheetUI();
   ProfileManager.updateHeaderBadge();
 });

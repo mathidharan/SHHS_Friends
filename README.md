@@ -54,13 +54,20 @@ School Friends Profile/
   - Real-time search across names, designations, companies, cities, and sectors.
   - Sector filter pills: **All**, **Private**, **Govt**, **Self**.
 
-### 3. Data Storage & JSON Management
+### 3. Google Sheets 100% Free Live Sync
+- **Automatic Storage**: As soon as a user completes the registration form on `index.html`, their profile is pushed directly to your Google Sheet as a new row.
+- **Live Directory Loading**: `profiles.html` fetches the latest registered rows directly from Google Sheet and displays them on the web page.
+- **Cost Free**: Powered by Google Apps Script web app endpoint with zero third-party subscriptions or API fees.
+- **Resilient Fallback**: If offline or if no Google Sheet is connected yet, falls back seamlessly to `localStorage`.
+- **Setup Guide**: See [`GOOGLE_SHEETS_SETUP.md`](./GOOGLE_SHEETS_SETUP.md) for 2-minute setup instructions.
+
+### 4. Data Storage & JSON Management
 - Initial seed profiles are preloaded from `data.json`.
 - Uses resilient fallback to `localStorage` so the application runs immediately without requiring a backend server or even when opened via the `file://` protocol.
 - **Export JSON**: Download the updated `data.json` directly from the UI with a single click.
 - **Import JSON**: Load an existing `data.json` file into the directory.
 
-### 4. Aesthetics & Polish
+### 5. Aesthetics & Polish
 - Modern typography via Google Fonts (`Outfit` & `Plus Jakarta Sans`).
 - Dark and Light mode theme toggle with persistent preferences.
 - Glassmorphism, smooth micro-interactions, and toast alerts.
