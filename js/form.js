@@ -33,9 +33,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const phoneInput = document.getElementById('phone');
   const emailInput = document.getElementById('email');
 
+  // Blood group & donation fields
+  const bloodGroupInput = document.getElementById('bloodGroup');
+  const willingDonateInputs = document.querySelectorAll('input[name="willingToDonate"]');
+  const donateYesCard = document.getElementById('donateYesCard');
+  const donateNoCard = document.getElementById('donateNoCard');
+
   // Preview elements
   const previewName = document.getElementById('previewName');
   const previewGender = document.getElementById('previewGender');
+  const previewBloodBadge = document.getElementById('previewBloodBadge');
+  const previewBloodText = document.getElementById('previewBloodText');
   const previewRole = document.getElementById('previewRole');
   const previewCompany = document.getElementById('previewCompany');
   const previewDob = document.getElementById('previewDob');
@@ -58,6 +66,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Helper to get active occupation type
   function getSelectedOccType() {
     return document.querySelector('input[name="occupationType"]:checked')?.value || 'Working';
+  }
+
+  // Helper to get active blood donation willingness
+  function getWillingToDonate() {
+    return document.querySelector('input[name="willingToDonate"]:checked')?.value || 'Yes';
   }
 
   // Toggle Working vs Business sections
@@ -110,6 +123,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     const selectedGender = document.querySelector('input[name="gender"]:checked')?.value || 'Not specified';
     if (previewGender) {
       previewGender.innerHTML = `<i class="fas fa-user"></i> ${selectedGender}`;
+    }
+
+    // Blood Group & Donor Badge Preview
+    const bloodGroupVal = bloodGroupInput?.value || 'O+';
+    const isDonor = getWillingToDonate() === 'Yes';
+    if (previewBloodBadge) {
+      if (bloodGroupVal) {
+        previewBloodBadge.style.display = 'inline-flex';
+        if (isDonor) {
+          previewBloodBadge.className = 'blood-badge donor';
+          previewBloodBadge.innerHTML = `<i class="fas fa-heartbeat"></i> <span>${bloodGroupVal} &bull; Donor</span>`;
+        } else {
+          previewBloodBadge.className = 'blood-badge';
+          previewBloodBadge.innerHTML = `<i class="fas fa-tint"></i> <span>${bloodGroupVal}</span>`;
+        }
+      } else {
+        previewBloodBadge.style.display = 'none';
+      }
+    }
+
+    // Donor card visual toggle
+    if (donateYesCard && donateNoCard) {
+      if (isDonor) {
+        donateYesCard.classList.add('active');
+        donateNoCard.classList.remove('active');
+      } else {
+        donateNoCard.classList.add('active');
+        donateYesCard.classList.remove('active');
+      }
     }
 
     // Avatar Badge
@@ -206,6 +248,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dobInput) dobInput.value = target.dob || '';
     if (phoneInput) phoneInput.value = target.phone || '';
     if (emailInput) emailInput.value = target.email || '';
+    if (bloodGroupInput && target.bloodGroup) bloodGroupInput.value = target.bloodGroup;
+
+    // Blood Donation Willingness
+    const targetWilling = target.willingToDonate === 'No' ? 'No' : 'Yes';
+    const donateRadio = document.querySelector(`input[name="willingToDonate"][value="${targetWilling}"]`);
+    if (donateRadio) donateRadio.checked = true;
 
     // Gender
     const genderRadio = document.querySelector(`input[name="gender"][value="${target.gender}"]`);
@@ -262,9 +310,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Sector and gender change listeners
-  [...genderInputs, ...sectorInputs].forEach(radio => {
+  [...genderInputs, ...sectorInputs, ...willingDonateInputs].forEach(radio => {
     radio.addEventListener('change', updateLivePreview);
   });
+
+  if (bloodGroupInput) {
+    bloodGroupInput.addEventListener('change', updateLivePreview);
+  }
 
   // Handle Form Submission
   form.addEventListener('submit', async (e) => {
@@ -293,10 +345,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    const bloodGroup = bloodGroupInput ? bloodGroupInput.value : '';
+    const willingToDonate = getWillingToDonate();
+
+    if (!bloodGroup) {
+      showToast('Please select Blood Group', 'error');
+      bloodGroupInput.focus();
+      return;
+    }
+
     let profilePayload = {
       name,
       gender,
       dob,
+      bloodGroup,
+      willingToDonate,
       occupationType: occType,
       phone,
       email

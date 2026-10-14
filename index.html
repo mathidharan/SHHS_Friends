@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>School Friends Profile | Member Registration</title>
+  <title>SHHS School Friends Profile | Member Registration</title>
 
   <!-- Modern Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,7 +30,7 @@
           <i class="fas fa-id-card"></i>
         </div>
         <div class="brand-text">
-          <h1>School Friends Profile</h1>
+          <h1>SHHS School Friends Profile</h1>
           <p>Alumni Business Directory</p>
         </div>
       </div>
@@ -145,6 +145,57 @@
               <div class="input-wrapper">
                 <i class="fas fa-calendar-alt input-icon"></i>
                 <input type="date" id="dob" class="form-control" required value="1995-05-20">
+              </div>
+            </div>
+
+            <!-- Blood Group -->
+            <div class="form-group">
+              <label class="form-label" for="bloodGroup">
+                <span>Blood Group</span> <span class="required">*</span>
+              </label>
+              <div class="input-wrapper">
+                <i class="fas fa-tint input-icon" style="color: #ef4444;"></i>
+                <select id="bloodGroup" class="form-control" required style="padding-left: 2.75rem;">
+                  <option value="" disabled>Select Blood Group</option>
+                  <option value="A+">A+ (A Positive)</option>
+                  <option value="A-">A- (A Negative)</option>
+                  <option value="B+">B+ (B Positive)</option>
+                  <option value="B-">B- (B Negative)</option>
+                  <option value="O+" selected>O+ (O Positive)</option>
+                  <option value="O-">O- (O Negative)</option>
+                  <option value="AB+">AB+ (AB Positive)</option>
+                  <option value="AB-">AB- (AB Negative)</option>
+                  <option value="Unknown">Don't Know / Other</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Willing to Donate Blood? -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Willing to Donate Blood?</span> <span class="required">*</span>
+              </label>
+              <div style="display: flex; gap: 0.75rem; margin-top: 0.25rem;">
+                <label style="flex: 1; cursor: pointer;">
+                  <input type="radio" name="willingToDonate" value="Yes" checked style="display: none;" id="donateYes">
+                  <div class="sector-label donor-toggle-card active" id="donateYesCard"
+                    onclick="document.getElementById('donateYes').checked = true; document.getElementById('donateYes').dispatchEvent(new Event('change'))">
+                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                      <i class="fas fa-heartbeat" style="color: #ef4444;"></i>
+                      <span>Yes, Willing</span>
+                    </div>
+                  </div>
+                </label>
+                <label style="flex: 1; cursor: pointer;">
+                  <input type="radio" name="willingToDonate" value="No" style="display: none;" id="donateNo">
+                  <div class="sector-label donor-toggle-card" id="donateNoCard"
+                    onclick="document.getElementById('donateNo').checked = true; document.getElementById('donateNo').dispatchEvent(new Event('change'))">
+                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                      <i class="fas fa-times-circle" style="color: var(--text-dim);"></i>
+                      <span>No</span>
+                    </div>
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -436,9 +487,15 @@
             <div>
               <div class="biz-card-header">
                 <h3 class="biz-name" id="previewName">Your Name Here</h3>
-                <span class="biz-gender-tag" id="previewGender">
-                  <i class="fas fa-mars"></i> Male
-                </span>
+                <div
+                  style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                  <span class="biz-gender-tag" id="previewGender">
+                    <i class="fas fa-mars"></i> Male
+                  </span>
+                  <span class="blood-badge donor" id="previewBloodBadge" title="Blood Group & Donor Status">
+                    <i class="fas fa-heartbeat"></i> <span id="previewBloodText">O+ &bull; Donor</span>
+                  </span>
+                </div>
               </div>
 
               <div class="biz-role-section">

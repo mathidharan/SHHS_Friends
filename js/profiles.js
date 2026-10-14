@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const exportJsonBtn = document.getElementById('exportJsonBtn');
   const importJsonInput = document.getElementById('importJsonFile');
   const resetDataBtn = document.getElementById('resetDataBtn');
-  
+
   // Admin Image Modal Elements
   const adminModal = document.getElementById('adminPhotoModal');
   const adminModalClose = document.getElementById('adminModalClose');
@@ -26,15 +26,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   let activeSearchTerm = '';
 
   // Render cards
-  async function renderProfiles() {
+  async function renderProfiles(forceRefresh = false) {
     if (!cardsContainer) return;
-    const allProfiles = await ProfileManager.getProfiles();
+    const allProfiles = await ProfileManager.getProfiles(forceRefresh);
 
     // Filter logic
     let filtered = allProfiles.filter(profile => {
-      // Career / Sector filter
+      // Career / Sector / Donor filter
       if (activeSectorFilter !== 'ALL') {
-        if (activeSectorFilter === 'Business') {
+        if (activeSectorFilter === 'Donor') {
+          if (profile.willingToDonate !== 'Yes' && profile.willingToDonate !== true) return false;
+        } else if (activeSectorFilter === 'Business') {
           if (profile.occupationType !== 'Business') return false;
         } else if (activeSectorFilter === 'Working') {
           if (profile.occupationType === 'Business') return false;
@@ -56,7 +58,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const matchesBizLoc = (profile.businessLocation || '').toLowerCase().includes(query);
         const matchesSector = (profile.workingSector || '').toLowerCase().includes(query);
         const matchesOcc = (profile.occupationType || '').toLowerCase().includes(query);
-        return matchesName || matchesJob || matchesBiz || matchesCompany || matchesDesig || matchesCity || matchesBizLoc || matchesSector || matchesOcc;
+        const matchesBlood = (profile.bloodGroup || '').toLowerCase().includes(query);
+        const matchesDonor = (query.includes('donor') || query.includes('blood')) && (profile.willingToDonate === 'Yes' || profile.willingToDonate === true);
+        return matchesName || matchesJob || matchesBiz || matchesCompany || matchesDesig || matchesCity || matchesBizLoc || matchesSector || matchesOcc || matchesBlood || matchesDonor;
       }
       return true;
     });
@@ -86,9 +90,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const sectorClass = isBusiness ? 'sector-self' : `sector-${(profile.workingSector || 'private').toLowerCase()}`;
       const photoSrc = profile.photo || ProfileManager.getDefaultAvatar(profile.gender);
 
-      const sectorBadgeHtml = isBusiness 
+      const sectorBadgeHtml = isBusiness
         ? `<span class="sector-badge sector-self"><i class="fas fa-store"></i> Business</span>`
         : `<span class="sector-badge ${sectorClass}"><i class="fas fa-briefcase"></i> ${escapeHtml(profile.workingSector)}</span>`;
+
+      const hasBloodGroup = profile.bloodGroup && profile.bloodGroup.trim() !== '';
+      const isDonor = profile.willingToDonate === 'Yes' || profile.willingToDonate === true;
+      const bloodBadgeHtml = hasBloodGroup
+        ? (isDonor
+          ? `<span class="blood-badge donor" title="Blood Group: ${escapeHtml(profile.bloodGroup)} &bull; Willing Blood Donor"><i class="fas fa-heartbeat"></i> ${escapeHtml(profile.bloodGroup)} &bull; Donor</span>`
+          : `<span class="blood-badge" title="Blood Group: ${escapeHtml(profile.bloodGroup)}"><i class="fas fa-tint"></i> ${escapeHtml(profile.bloodGroup)}</span>`)
+        : '';
 
       return `
         <article class="biz-card" data-id="${profile.id}">
@@ -111,10 +123,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div>
               <div class="biz-card-header">
                 <h3 class="biz-name">${escapeHtml(profile.name)}</h3>
-                <span class="biz-gender-tag">
-                  <i class="fas ${profile.gender === 'Female' ? 'fa-venus' : profile.gender === 'Male' ? 'fa-mars' : 'fa-genderless'}"></i>
-                  ${escapeHtml(profile.gender)}
-                </span>
+                <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                  <span class="biz-gender-tag">
+                    <i class="fas ${profile.gender === 'Female' ? 'fa-venus' : profile.gender === 'Male' ? 'fa-mars' : 'fa-genderless'}"></i>
+                    ${escapeHtml(profile.gender)}
+                  </span>
+                  ${bloodBadgeHtml}
+                </div>
               </div>
 
               <div class="biz-role-section">
@@ -232,6 +247,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  // Expose global render function for Google Sheet sync
+  window.renderProfilesFromRemote = async (force = true) => {
+    await renderProfiles(force);
+  };
+
+  // Sync button if present
+  const syncBtn = document.getElementById('syncSheetBtn');
+  if (syncBtn) {
+    syncBtn.addEventListener('click', async () => {
+      const sheetUrl = ProfileManager.getGoogleSheetUrl();
+      if (!sheetUrl) {
+        openGoogleSheetModal();
+        return;
+      }
+      syncBtn.disabled = true;
+      syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+      try {
+        const data = await ProfileManager.fetchFromSheet();
+        await renderProfiles(true);
+        if (data) {
+          showToast(`Refreshed ${data.length} profiles!`, 'success');
+        } else {
+          showToast('Directory up to date', 'info');
+        }
+      } catch (err) {
+        showToast('Sync failed: ' + err.message, 'error');
+      } finally {
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Sheet';
+      }
+    });
+  }
+
   // Initial load
   await renderProfiles();
 });
+
