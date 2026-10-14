@@ -201,8 +201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             <!-- Card Bottom Bar -->
             <div class="biz-card-footer">
-              <span>ID: ${profile.id}</span>
-              <div class="biz-card-actions">
+              <div class="biz-card-actions" style="margin-left: auto;">
                 <a 
                   href="index.html?editId=${profile.id}" 
                   class="action-btn edit-btn" 
