@@ -115,14 +115,190 @@
         </button>
       </div>
 
-      <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;" id="filteredCount">
-        Showing all members
+      <div class="filter-bar-right">
+        <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;" id="filteredCount">
+          <span class="loading-pulse-badge"><i class="fas fa-circle-notch fa-spin"></i> Loading alumni profiles from database...</span>
+        </div>
+
+        <!-- View Switcher (Card View vs Table View) -->
+        <div class="view-toggle-wrap" role="group" aria-label="Directory View Mode">
+          <button type="button" class="view-toggle-btn active" id="viewCardBtn" title="Cards View" data-view="cards">
+            <i class="fas fa-th-large"></i> <span>Cards</span>
+          </button>
+          <button type="button" class="view-toggle-btn" id="viewTableBtn" title="Table View" data-view="table">
+            <i class="fas fa-table-list"></i> <span>Table</span>
+          </button>
+        </div>
       </div>
     </section>
 
     <!-- 30:70 Horizontal Business Cards Grid -->
     <section class="biz-cards-grid" id="bizCardsContainer">
-      <!-- Cards rendered dynamically via js/profiles.js -->
+      <!-- Initial Skeleton Shimmer Cards -->
+      <article class="biz-card skeleton-card" aria-hidden="true">
+        <div class="biz-card-visual">
+          <div class="biz-avatar-box">
+            <div class="skeleton-avatar skeleton-shimmer"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-pill" style="width: 82px; height: 26px; margin-top: 0.65rem;"></div>
+        </div>
+        <div class="biz-card-content">
+          <div>
+            <div class="biz-card-header" style="margin-bottom: 0.75rem;">
+              <div class="skeleton-shimmer" style="width: 48%; height: 26px; border-radius: 6px;"></div>
+              <div style="display: flex; gap: 0.4rem;">
+                <div class="skeleton-shimmer skeleton-pill" style="width: 58px; height: 22px;"></div>
+                <div class="skeleton-shimmer skeleton-pill" style="width: 78px; height: 22px;"></div>
+              </div>
+            </div>
+            <div class="biz-role-section" style="margin-bottom: 0.85rem;">
+              <div class="skeleton-shimmer" style="width: 65%; height: 18px; border-radius: 4px; margin-bottom: 0.4rem;"></div>
+              <div class="skeleton-shimmer" style="width: 42%; height: 16px; border-radius: 4px;"></div>
+            </div>
+            <div class="biz-meta-grid">
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+            </div>
+          </div>
+          <div class="biz-card-footer" style="margin-top: 1rem;">
+            <div class="skeleton-shimmer" style="width: 72px; height: 28px; border-radius: 6px; margin-left: auto;"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="biz-card skeleton-card" aria-hidden="true">
+        <div class="biz-card-visual">
+          <div class="biz-avatar-box">
+            <div class="skeleton-avatar skeleton-shimmer"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-pill" style="width: 82px; height: 26px; margin-top: 0.65rem;"></div>
+        </div>
+        <div class="biz-card-content">
+          <div>
+            <div class="biz-card-header" style="margin-bottom: 0.75rem;">
+              <div class="skeleton-shimmer" style="width: 52%; height: 26px; border-radius: 6px;"></div>
+              <div style="display: flex; gap: 0.4rem;">
+                <div class="skeleton-shimmer skeleton-pill" style="width: 58px; height: 22px;"></div>
+                <div class="skeleton-shimmer skeleton-pill" style="width: 78px; height: 22px;"></div>
+              </div>
+            </div>
+            <div class="biz-role-section" style="margin-bottom: 0.85rem;">
+              <div class="skeleton-shimmer" style="width: 60%; height: 18px; border-radius: 4px; margin-bottom: 0.4rem;"></div>
+              <div class="skeleton-shimmer" style="width: 45%; height: 16px; border-radius: 4px;"></div>
+            </div>
+            <div class="biz-meta-grid">
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+            </div>
+          </div>
+          <div class="biz-card-footer" style="margin-top: 1rem;">
+            <div class="skeleton-shimmer" style="width: 72px; height: 28px; border-radius: 6px; margin-left: auto;"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="biz-card skeleton-card" aria-hidden="true">
+        <div class="biz-card-visual">
+          <div class="biz-avatar-box">
+            <div class="skeleton-avatar skeleton-shimmer"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-pill" style="width: 82px; height: 26px; margin-top: 0.65rem;"></div>
+        </div>
+        <div class="biz-card-content">
+          <div>
+            <div class="biz-card-header" style="margin-bottom: 0.75rem;">
+              <div class="skeleton-shimmer" style="width: 44%; height: 26px; border-radius: 6px;"></div>
+              <div style="display: flex; gap: 0.4rem;">
+                <div class="skeleton-shimmer skeleton-pill" style="width: 58px; height: 22px;"></div>
+                <div class="skeleton-shimmer skeleton-pill" style="width: 78px; height: 22px;"></div>
+              </div>
+            </div>
+            <div class="biz-role-section" style="margin-bottom: 0.85rem;">
+              <div class="skeleton-shimmer" style="width: 55%; height: 18px; border-radius: 4px; margin-bottom: 0.4rem;"></div>
+              <div class="skeleton-shimmer" style="width: 38%; height: 16px; border-radius: 4px;"></div>
+            </div>
+            <div class="biz-meta-grid">
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+              <div class="skeleton-shimmer" style="height: 38px; border-radius: 8px;"></div>
+            </div>
+          </div>
+          <div class="biz-card-footer" style="margin-top: 1rem;">
+            <div class="skeleton-shimmer" style="width: 72px; height: 28px; border-radius: 6px; margin-left: auto;"></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Executive Directory Table View -->
+    <section class="biz-table-container" id="bizTableContainer" style="display: none;">
+      <div class="table-responsive">
+        <table class="biz-table" id="bizTable">
+          <thead>
+            <tr>
+              <th scope="col" style="min-width: 220px;">Member</th>
+              <th scope="col" style="min-width: 200px;">Career & Role</th>
+              <th scope="col" style="min-width: 120px;">Sector</th>
+              <th scope="col" style="min-width: 140px;">Location</th>
+              <th scope="col" style="min-width: 110px;">Blood Group</th>
+              <th scope="col" style="min-width: 140px;">Contact</th>
+              <th scope="col" style="text-align: right; min-width: 90px;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="bizTableBody">
+            <!-- Table Skeleton Shimmer Rows -->
+            <tr class="skeleton-table-row" aria-hidden="true">
+              <td>
+                <div class="table-member-cell">
+                  <div class="skeleton-shimmer" style="width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;"></div>
+                  <div style="flex: 1;">
+                    <div class="skeleton-shimmer" style="width: 120px; height: 16px; border-radius: 4px; margin-bottom: 5px;"></div>
+                    <div class="skeleton-shimmer" style="width: 70px; height: 12px; border-radius: 4px;"></div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="table-role-cell">
+                  <div class="skeleton-shimmer" style="width: 140px; height: 16px; border-radius: 4px; margin-bottom: 5px;"></div>
+                  <div class="skeleton-shimmer" style="width: 110px; height: 14px; border-radius: 4px;"></div>
+                </div>
+              </td>
+              <td><div class="skeleton-shimmer skeleton-pill" style="width: 80px; height: 24px;"></div></td>
+              <td><div class="skeleton-shimmer" style="width: 95px; height: 16px; border-radius: 4px;"></div></td>
+              <td><div class="skeleton-shimmer skeleton-pill" style="width: 65px; height: 22px;"></div></td>
+              <td><div class="skeleton-shimmer" style="width: 105px; height: 16px; border-radius: 4px;"></div></td>
+              <td style="text-align: right;"><div class="skeleton-shimmer" style="width: 65px; height: 28px; border-radius: 6px; margin-left: auto;"></div></td>
+            </tr>
+            <tr class="skeleton-table-row" aria-hidden="true">
+              <td>
+                <div class="table-member-cell">
+                  <div class="skeleton-shimmer" style="width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;"></div>
+                  <div style="flex: 1;">
+                    <div class="skeleton-shimmer" style="width: 130px; height: 16px; border-radius: 4px; margin-bottom: 5px;"></div>
+                    <div class="skeleton-shimmer" style="width: 60px; height: 12px; border-radius: 4px;"></div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="table-role-cell">
+                  <div class="skeleton-shimmer" style="width: 130px; height: 16px; border-radius: 4px; margin-bottom: 5px;"></div>
+                  <div class="skeleton-shimmer" style="width: 90px; height: 14px; border-radius: 4px;"></div>
+                </div>
+              </td>
+              <td><div class="skeleton-shimmer skeleton-pill" style="width: 80px; height: 24px;"></div></td>
+              <td><div class="skeleton-shimmer" style="width: 95px; height: 16px; border-radius: 4px;"></div></td>
+              <td><div class="skeleton-shimmer skeleton-pill" style="width: 65px; height: 22px;"></div></td>
+              <td><div class="skeleton-shimmer" style="width: 105px; height: 16px; border-radius: 4px;"></div></td>
+              <td style="text-align: right;"><div class="skeleton-shimmer" style="width: 65px; height: 28px; border-radius: 6px; margin-left: auto;"></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   </main>
 

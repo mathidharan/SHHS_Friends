@@ -63,6 +63,128 @@ const DEFAULT_PROFILES = [
   }
 ];
 
+// ==========================================================================
+// Comprehensive Loading & Progress Indicator System
+// ==========================================================================
+const LoadingManager = {
+  _activeRequests: 0,
+  _progressElement: null,
+  _overlayElement: null,
+  _showTimestamp: 0,
+  _minDuration: 0,
+
+  // Ensure top slim progress bar exists in DOM
+  getProgressBar() {
+    if (!this._progressElement || !document.body.contains(this._progressElement)) {
+      let el = document.getElementById('topProgressBar');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'topProgressBar';
+        el.className = 'top-progress-bar';
+        el.setAttribute('role', 'progressbar');
+        el.setAttribute('aria-hidden', 'true');
+        if (document.body) {
+          document.body.prepend(el);
+        }
+      }
+      this._progressElement = el;
+    }
+    return this._progressElement;
+  },
+
+  // Start top progress animation
+  startProgress() {
+    this._activeRequests++;
+    const bar = this.getProgressBar();
+    if (bar) {
+      bar.classList.remove('finish');
+      bar.classList.add('loading');
+    }
+  },
+
+  // Stop top progress animation
+  stopProgress() {
+    this._activeRequests = Math.max(0, this._activeRequests - 1);
+    if (this._activeRequests === 0) {
+      const bar = this.getProgressBar();
+      if (bar) {
+        bar.classList.add('finish');
+        setTimeout(() => {
+          if (this._activeRequests === 0) {
+            bar.classList.remove('loading', 'finish');
+          }
+        }, 350);
+      }
+    }
+  },
+
+  // Ensure global overlay exists in DOM
+  getOverlay() {
+    if (!this._overlayElement || !document.body.contains(this._overlayElement)) {
+      let el = document.getElementById('globalLoadingOverlay');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'globalLoadingOverlay';
+        el.className = 'global-loading-overlay';
+        el.setAttribute('role', 'dialog');
+        el.setAttribute('aria-modal', 'true');
+        el.innerHTML = `
+          <div class="loading-modal-card">
+            <div class="loader-visual">
+              <div class="loader-spinner-outer"></div>
+              <div class="loader-spinner-inner"></div>
+              <div class="loader-icon-center">
+                <i class="fas fa-graduation-cap"></i>
+              </div>
+            </div>
+            <h4 class="loading-title" id="loadingTitle">Loading Alumni Data</h4>
+            <p class="loading-subtitle" id="loadingSubtitle">Synchronizing with database, please wait...</p>
+            <div class="loading-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        `;
+        if (document.body) {
+          document.body.appendChild(el);
+        }
+      }
+      this._overlayElement = el;
+    }
+    return this._overlayElement;
+  },
+
+  // Show full-page / glassmorphism loading overlay
+  show({ title = 'Processing...', subtitle = 'Please wait a moment...', minDuration = 0 } = {}) {
+    this.startProgress();
+    const overlay = this.getOverlay();
+    if (overlay) {
+      const titleEl = overlay.querySelector('#loadingTitle');
+      const subtitleEl = overlay.querySelector('#loadingSubtitle');
+      if (titleEl) titleEl.textContent = title;
+      if (subtitleEl) subtitleEl.textContent = subtitle;
+
+      overlay.classList.add('active');
+    }
+    this._showTimestamp = Date.now();
+    this._minDuration = minDuration;
+  },
+
+  // Hide loading overlay
+  hide() {
+    this.stopProgress();
+    const overlay = this._overlayElement || document.getElementById('globalLoadingOverlay');
+    if (!overlay) return;
+
+    const elapsed = Date.now() - (this._showTimestamp || 0);
+    const remaining = Math.max(0, (this._minDuration || 0) - elapsed);
+
+    setTimeout(() => {
+      overlay.classList.remove('active');
+    }, remaining);
+  }
+};
+window.LoadingManager = LoadingManager;
+
 // Profile Manager
 const ProfileManager = {
   _sheetFetchedOnce: false,
@@ -88,23 +210,28 @@ const ProfileManager = {
 
   // Test connection to Google Apps Script Web App
   async testGoogleSheetConnection(url) {
-    const targetUrl = (url && url.trim()) ? url.trim() : this.getGoogleSheetUrl();
-    if (!targetUrl) {
-      throw new Error('Google Apps Script URL is not configured');
+    LoadingManager.startProgress();
+    try {
+      const targetUrl = (url && url.trim()) ? url.trim() : this.getGoogleSheetUrl();
+      if (!targetUrl) {
+        throw new Error('Google Apps Script URL is not configured');
+      }
+      const testUrl = targetUrl + (targetUrl.includes('?') ? '&' : '?') + 'action=getProfiles&_t=' + Date.now();
+      const res = await fetch(testUrl);
+      if (!res.ok) {
+        throw new Error(`Google Apps Script responded with HTTP status ${res.status}`);
+      }
+      const json = await res.json();
+      if (json && json.status === 'success') {
+        return {
+          success: true,
+          count: Array.isArray(json.data) ? json.data.length : (json.count || 0)
+        };
+      }
+      throw new Error(json.message || 'Unexpected response format from Google Apps Script');
+    } finally {
+      LoadingManager.stopProgress();
     }
-    const testUrl = targetUrl + (targetUrl.includes('?') ? '&' : '?') + 'action=getProfiles&_t=' + Date.now();
-    const res = await fetch(testUrl);
-    if (!res.ok) {
-      throw new Error(`Google Apps Script responded with HTTP status ${res.status}`);
-    }
-    const json = await res.json();
-    if (json && json.status === 'success') {
-      return {
-        success: true,
-        count: Array.isArray(json.data) ? json.data.length : (json.count || 0)
-      };
-    }
-    throw new Error(json.message || 'Unexpected response format from Google Apps Script');
   },
 
   // Fetch profiles directly from Google Sheet
@@ -112,6 +239,7 @@ const ProfileManager = {
     const sheetUrl = this.getGoogleSheetUrl();
     if (!sheetUrl) return null;
 
+    LoadingManager.startProgress();
     try {
       const urlWithParam = sheetUrl + (sheetUrl.includes('?') ? '&' : '?') + 'action=getProfiles&_t=' + Date.now();
       const response = await fetch(urlWithParam);
@@ -182,6 +310,8 @@ const ProfileManager = {
       }
     } catch (sheetErr) {
       console.warn('Failed to load live data from Database, falling back to local cache:', sheetErr);
+    } finally {
+      LoadingManager.stopProgress();
     }
     return null;
   },
@@ -191,6 +321,7 @@ const ProfileManager = {
     const sheetUrl = this.getGoogleSheetUrl();
     if (!sheetUrl) return false;
 
+    LoadingManager.startProgress();
     try {
       // POST with text/plain to prevent CORS preflight blocking in browsers
       await fetch(sheetUrl, {
@@ -217,6 +348,8 @@ const ProfileManager = {
         console.error('Database POST failed:', err2);
         return false;
       }
+    } finally {
+      LoadingManager.stopProgress();
     }
   },
 
@@ -370,6 +503,7 @@ const ProfileManager = {
     }
   }
 };
+window.ProfileManager = ProfileManager;
 
 // Calculate age from date of birth
 function calculateAge(dobString) {

@@ -237,14 +237,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const profiles = await ProfileManager.getProfiles();
-    const target = profiles.find(p => p.id === editId);
-    if (!target) {
-      toggleCareerSections();
-      return;
+    if (window.LoadingManager) {
+      window.LoadingManager.show({
+        title: 'Loading Alumni Profile',
+        subtitle: 'Fetching profile details for editing...',
+        minDuration: 250
+      });
     }
 
-    isEditMode = true;
+    try {
+      const profiles = await ProfileManager.getProfiles();
+      const target = profiles.find(p => p.id === editId);
+      if (!target) {
+        toggleCareerSections();
+        return;
+      }
+
+      isEditMode = true;
 
     // Update UI headers
     const pageTitle = document.querySelector('.page-title');
@@ -302,7 +311,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     updateLivePreview();
+  } finally {
+    if (window.LoadingManager) {
+      window.LoadingManager.hide();
+    }
   }
+}
 
   // Handle Occupation Type Toggle
   occTypeInputs.forEach(radio => {
@@ -453,6 +467,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
     }
 
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnContent = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add('btn-loading');
+      submitBtn.innerHTML = `<span class="btn-spinner"></span> ${isEditMode ? 'Saving Changes...' : 'Registering Member...'}`;
+    }
+
+    if (window.LoadingManager) {
+      window.LoadingManager.show({
+        title: isEditMode ? 'Updating Alumni Profile' : 'Registering Alumni Member',
+        subtitle: isEditMode
+          ? 'Saving changes and updating cloud database...'
+          : 'Formatting executive business card and syncing with database...',
+        minDuration: 300
+      });
+    }
+
     try {
       if (isEditMode) {
         await ProfileManager.updateProfile(editId, profilePayload);
@@ -477,6 +509,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
       console.error(err);
       showToast('Failed to save profile. Please try again.', 'error');
+    } finally {
+      if (window.LoadingManager) {
+        window.LoadingManager.hide();
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('btn-loading');
+        submitBtn.innerHTML = originalBtnContent;
+      }
     }
   });
 
